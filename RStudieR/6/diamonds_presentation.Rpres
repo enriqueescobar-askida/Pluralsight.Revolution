@@ -1,0 +1,26 @@
+Diamonds Presentation
+========================================================
+author: 
+date: 
+
+Simplest possible chunk
+========================================================
+No name or options specified.
+```{r}
+  library(ggplot2)
+  ggplot(diamonds, aes(x=color)) + geom_bar()
+```
+
+Chunk with Options
+========================================================
+
+```{r, html-diamond-bar, fig.align='center'}
+  ggplot(diamonds, aes(x=color, fill=color)) + geom_bar()
+```
+
+Inline Code
+========================================================
+
+* 1 + 3 = `r 1 + 3`
+* $pi$ = `r pi`
+

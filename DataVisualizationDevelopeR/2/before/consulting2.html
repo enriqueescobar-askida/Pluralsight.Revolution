@@ -1,0 +1,129 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script src="libraries/RGraph.common.core.js" ></script>
+    <script src="libraries/RGraph.scatter.js" ></script>
+    
+    <title>Work at home!</title>
+    
+    
+    <meta name="description" content="A basic Scatter chart" />
+     
+</head>
+<body>
+
+    <h1 style="text-align: center">Work at home!</h1>
+    <div style="text-align: center">
+        <canvas id="cvs" width="800" height="500">[No canvas support]</canvas>
+    </div>
+   
+    <script>
+        var incomes = [2000,2200,2200,2400,2400,2400,13600,13600,13600,13800,13800,14000];
+        var incomes2 = [7000,7200,7200,7400,7400,7400,8600,8600,8600,8800,8800,9000];
+        
+        
+        function group(dataset, color)
+        {
+            var grouped = {};
+            for (i in dataset) {
+                grouped[dataset[i]] = (grouped[dataset[i]]==null)? 1: grouped[dataset[i]]+1;
+            }
+            var result = [];
+            for(key in grouped)
+            {
+                result[result.length] = new Array(parseInt(key), grouped[key], color);
+            }
+            return result;
+        }
+        
+        window.onload = function ()
+        {
+            var scatter = new RGraph.Scatter('cvs', group(incomes, '#FF0000'), group(incomes2, '#0000FF'));
+                scatter.Set('xscale',true);
+                scatter.Set('title.yaxis','# of workers');
+                scatter.Set('title.xaxis','income');
+                scatter.Set('gutter.left', 50);
+                scatter.Set('gutter.bottom', 50);
+                scatter.Set('tickmarks','circle');
+                scatter.Set('ticksize', 10);
+                scatter.Set('defaultcolor', '#0000FF');
+                scatter.Draw();
+                showStats();
+        }
+        
+        function showStats()
+        {
+             document.getElementById('idavg').innerHTML = 'Average values are  <span style="color:red">' + getAverage(incomes).toFixed(0) + '</span> ' +
+                                                                              '<span style="color:blue">' + getAverage(incomes2).toFixed(0) + '</span>';
+             document.getElementById('idmed').innerHTML = 'Median values are  <span style="color:red">' + getMedian(incomes).toFixed(0) + '</span> ' +
+                                                                              '<span style="color:blue">' + getMedian(incomes2).toFixed(0) + '</span>';;
+             document.getElementById('idstd').innerHTML = 'Standard deviation values are  <span style="color:red">' + getStandardDeviation(incomes).toFixed(0) + '</span> ' +
+                                                                              '<span style="color:blue">' + getStandardDeviation(incomes2).toFixed(0) + '</span>';;
+
+        }
+
+        function getMax(dataset)
+        {
+            var maxValue = Number.NEGATIVE_INFINITY;
+            for(i in dataset)
+            {
+                if (dataset[i]> maxValue) {
+                    maxValue = dataset[i];
+                }
+            }
+            return maxValue;
+        }
+
+        function getAverage(dataset)
+        {
+            var totalValue = 0;
+            for(i in dataset)
+            {
+                totalValue += dataset[i];
+            }
+            return totalValue/ dataset.length;
+        }
+        
+        function getMedian(dataset)
+        {
+            var arrayToSort = dataset.slice(0); // copy the array
+            arrayToSort.sort(function(a, b) { return a - b; });
+
+            var half = Math.floor(arrayToSort.length/2); // Find the halfway point
+          
+            if(arrayToSort.length % 2 == 1)
+            {   // Get the center point
+                return arrayToSort[half];            
+            }
+            else
+            {   // Get the mean of the two center entries
+                return (arrayToSort[half-1] + arrayToSort[half]) / 2.0;
+            }
+        }
+        
+        function getStandardDeviation(dataset)
+        {
+            var mean = getAverage(dataset);
+            var variance = 0;
+            for(i in dataset)
+            {
+                variance += Math.pow(dataset[i] - mean,2); // Square the distance from the mean
+            }
+            // Divide by # of entries
+            variance /= dataset.length;
+            // The standard deviation is the square root of the variance
+            return Math.sqrt(variance);
+        }
+
+        
+    </script>
+
+    <div id="idmax"></div>
+    <div id="idavg"></div>
+    <div id="idmed"></div>
+    <div id="idstd"></div>
+
+</body>
+</html>

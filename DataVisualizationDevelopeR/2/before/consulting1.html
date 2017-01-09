@@ -1,0 +1,110 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script src="libraries/RGraph.common.core.js" ></script>
+    <script src="libraries/RGraph.scatter.js" ></script>
+    
+    <title>Work at home!</title>
+    
+    
+    <meta name="description" content="A basic Scatter chart" />
+     
+</head>
+<body>
+
+    <h1 style="text-align: center">Work at home!</h1>
+    <div style="text-align: center">
+        <canvas id="cvs" width="800" height="500">[No canvas support]</canvas>
+    </div>
+    <script>
+        
+        var incomes = [4000,4000,4000,5000,5000,5000,8000,8000,8000,8000,8000,10000,10000,12000,
+                       12000,20000,200000,200000];
+        
+        
+        function group(dataset)
+        {
+            var grouped = {};
+            for (i in dataset) {
+                grouped[dataset[i]] = (grouped[dataset[i]]==null)? 1: grouped[dataset[i]]+1;
+            }
+            var result = [];
+            for(key in grouped)
+            {
+                result[result.length] = new Array(parseInt(key), grouped[key]);
+            }
+            return result;
+        }
+        
+        window.onload = function ()
+        {
+            var scatter = new RGraph.Scatter('cvs', group(incomes));
+                scatter.Set('xscale',true);
+                scatter.Set('title.yaxis','# of workers');
+                scatter.Set('title.xaxis','income');
+                scatter.Set('gutter.left', 50);
+                scatter.Set('gutter.bottom', 50);
+                scatter.Set('tickmarks','circle');
+                scatter.Set('ticksize', 8);
+                scatter.Set('defaultcolor', '#0000FF');
+                scatter.Draw();
+                showStats();
+        }
+        
+        function showStats()
+        {
+             document.getElementById('idmax').innerHTML = 'Maximum value is ' +getMax(incomes);
+             document.getElementById('idavg').innerHTML = 'Average value is ' +getAverage(incomes).toFixed(0);
+             document.getElementById('idmed').innerHTML = 'Median value is ' +getMedian(incomes).toFixed(0);
+        }
+
+        function getMax(dataset)
+        {
+            var maxValue = Number.NEGATIVE_INFINITY;
+            for(i in dataset)
+            {
+                if (dataset[i]> maxValue) {
+                    maxValue = dataset[i];
+                }
+            }
+            return maxValue;
+        }
+
+        function getAverage(dataset)
+        {
+            var totalValue = 0;
+            for(i in dataset)
+            {
+                totalValue += dataset[i];
+            }
+            return totalValue/ dataset.length;
+        }
+        
+        function getMedian(dataset)
+        {
+            var arrayToSort = dataset.slice(0); // copy the array
+            arrayToSort.sort(function(a, b) { return a - b; });
+
+            var half = Math.floor(arrayToSort.length/2); // Find the halfway point
+          
+            if(arrayToSort.length % 2 == 1)
+            {   // Get the center point
+                return arrayToSort[half];            
+            }
+            else
+            {   // Get the mean of the two center entries
+                return (arrayToSort[half-1] + arrayToSort[half]) / 2.0;
+            }
+        }
+
+        
+    </script>
+
+    <div id="idmax"></div>
+    <div id="idavg"></div>
+    <div id="idmed"></div>
+
+</body>
+</html>

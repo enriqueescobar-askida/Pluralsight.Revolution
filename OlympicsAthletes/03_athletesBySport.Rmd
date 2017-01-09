@@ -1,0 +1,341 @@
+---
+title: "Athletes by sport type and nations"
+author: "Duc-Quang Nguyen"
+date: "2 Aug 2016"
+output: html_document
+---
+## Ressources
+
+
+# Icons folder needs to be copied !!
+
+### Grouping of sports
+* Grouping of olympic sports: https://en.wikipedia.org/wiki/Olympic_sports
+* https://en.wikipedia.org/wiki/Combat_sport#Olympic_Combat_Sports
+* Team sports: https://en.wikipedia.org/wiki/Team_sport#Olympic_team_sports
+* [My own sport grouping](https://docs.google.com/spreadsheets/d/1WDkHi7tJCp2GRZPgdh4hZuSeYf5flCaeqdtnF-S4DRE/edit#gid=0)
+* Summer olympics open source icons: https://commons.wikimedia.org/wiki/Category:Summer_Olympics_pictograms
+
+
+## Stats
+
+* Data last scraped: 2016-08-04 7h GMT, [google sheet](https://docs.google.com/spreadsheets/d/1WDkHi7tJCp2GRZPgdh4hZuSeYf5flCaeqdtnF-S4DRE/edit?usp=sharing)
+* Swiss no teams
+* Russia
+  * [More than 110 Russian athletes banned](http://www.npr.org/sections/thetorch/2016/08/02/487642811/the-russian-tally-more-than-110-athletes-barred-from-the-olympics)
+  * [entire weightlifting team, all but one member of the track and field team](http://www.sbnation.com/2016/8/3/12371506/119-russian-athletes-banned-rio-olympics-doping-scandal)
+* Cycling
+* Horse riding
+* 
+
+
+## Findings
+
+
+
+```{r setup, include=FALSE}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(magrittr)
+library(countrycode)
+library(ggplot2)
+library(scales)
+library(swiMap)
+library(swiTheme)
+
+### Interactive 
+library(ggiraph)
+library(htmltools)
+library(swiRcharts)
+```
+
+```{r settings}
+rio.file <- "input/athletes_rio2016.csv"
+sports.file <- "input/summer Olympic sport grouping - Sheet1.csv"
+trad.file <- "input/Rio althetes by sport - Sheet1.csv"
+icon.file <- "input/Rio 20106 summer Olympic athletes list - sportGroup2icons.csv"
+
+
+spitOutGroupSports <- F
+plotDevStaticGraphic <- F
+computeStats <- F
+
+countries <- data.frame(names = c(
+  "Switzerland", "Brazil", "United States", "China", "Russia", 
+   "India", "Japan", "Turkey", "Germany", "Italy", #"Portugal", 
+  "France", "Spain", "United Kingdom")
+)
+countries$ioc <- countrycode(countries$names, "country.name", "ioc")
+```
+
+```{r load data}
+athletes <- read_csv(rio.file)
+sports <- read_csv(sports.file)
+
+cat("\nTotal number of athletes: " )
+cat(nrow(athletes))
+
+txt <- read.csv(trad.file, row.names = 1, stringsAsFactors = F)
+# discard incomplete translations
+cidx <- unique(which(txt =="" | is.na(txt), T)[,2])
+if(length(cidx > 0)) {
+  warning(paste(colnames(txt)[cidx], collapse = "\t"), " languages will be discarded!", "\n")
+  txt <- txt[,-cidx, drop = F]
+}
+colnames(txt)
+
+# check icons are present
+cat("\nAssuming icons are in a 'icons/' folder")
+group2icon <- read_csv(icon.file)
+group2icon$icon <- paste0(ifelse(is.na(group2icon$icon), "", "icons/"), group2icon$icon)
+stopifnot(all(file.exists(group2icon$icon[group2icon$icon != 'NA'])))
+
+```
+
+```{r wrangle data}
+if(spitOutGroupSports) {
+  sportGroups <- do.call(rbind, by(sports, sports$group, function(ddd) {
+    data.frame(group = unique(ddd$group), sports = paste0(ddd$sport, collapse = ", "))
+  }))
+  write.csv(sportGroups, "data/sportGroupsForTranslation.csv")
+}
+
+idx <- match(athletes$sport, sports$sport)
+stopifnot(!any(is.na(idx)))
+athletes$group <- unlist(sports[idx, 'group'], use.names = F)
+
+dat <- athletes %>% group_by(group, country, iso3) %>% summarise(value = length(athletes)) %>% ungroup()
+dat %<>% group_by(country, iso3) %>% mutate(total = sum(value)) %>% ungroup()
+dat$prop <- round((dat$value / dat$total), 3)
+
+dev100 <- dat %>% group_by(country) %>% summarise(totest = sum(prop)) %>% 
+  ungroup() %>% select(totest) - 1
+stopifnot(abs(dev100) < .01)
+
+data <- dat %>% filter(iso3 %in% countries$ioc)
+d.all <- data %>% group_by(group) %>% 
+  summarise(prop.all = (sum(value, na.rm = T) / sum(data$value))) %>% 
+  ungroup() %>% arrange(desc(prop.all))
+cat("\n", "Check sum overall sport proportions:", sum(d.all$prop.all))
+d.all$group <- factor(d.all$group, levels = d.all$group)
+
+# order factors
+data$group <- factor(data$group, levels = d.all$group)
+data$country <- gsub("Russian Federation", "Russia", data$country)
+data$country <- factor(data$country, levels = as.character(countries$names))
+data$iso2c <- countrycode(data$iso3, "ioc", "iso2c")
+
+stopifnot(all(levels(data$group) %in% group2icon$group))
+
+```
+
+
+```{r visualize theme, include = F}
+### ggplot2 theme
+myTheme <- function(
+  base_family = "OpenSans-CondensedLight", 
+  title_family = "OpenSans-CondensedBold", 
+  x.label.margin = -17) {
+  swi_theme(base_size = 14, base_family = base_family, title_family = title_family) +
+    theme(
+      strip.text.x = element_text(family = title_family, hjust = 0, vjust = 1, size = 14),
+      axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, 
+                                 margin = margin(t = x.label.margin), size = 11.5),
+      axis.line.x = element_blank(),
+      axis.ticks.x = element_blank(),
+      legend.position  = "none",
+      plot.margin = unit(c(0.1, 0.3, 0, 0), "mm")
+    )   
+}
+
+if(plotDevStaticGraphic) {
+  ggplot(data = data, aes(x = country, y = prop, group = country, fill = country)) + 
+    geom_bar(stat = "identity") + facet_wrap(~ group, ncol = 4, scales = "free_y") + 
+    myTheme() + 
+    scale_fill_manual(values = swi_rpal, drop=FALSE) +
+    scale_x_discrete(name = "", expand = c(0,0)) +
+    geom_hline(data = d.all, aes(yintercept = prop.all), linetype = 7, size = 0.2, alpha = 0.6) +
+    geom_text(aes(label = iso2c), vjust=1.5, color = "#f7f5ed", family =  "OpenSans-CondensedBold", size = 3) 
+}
+```
+
+## Generate each sport group as a standalone graphic
+
+(instead of faceting)
+
+```{r prod graphics helpers, include = F}
+### print interactive chart
+interactive_chart <- function(gpath, fontname = 'Open Sans Condensed') {
+  ggiraph(
+    code = {print(gpath)},
+    hover_css = "fill-opacity:0.6;stroke-opacity:0.9;stroke-width:1.1px;stroke:#333333;",
+    tooltip_opacity = 0.7,
+    pointsize = 12,
+    width = "100%",
+    height_svg = 4.5,
+    width_svg = 4,
+    fontname_sans = fontname,
+    fontname_serif = fontname
+  ) 
+}
+
+# Plot by sport group subsets of the data (no faceting) and generate HTML text
+graphGroup <- function(dd = dd, sp = sp, gr = gr, d.all = d.all, group2icon = group2icon) {
+  #dd %>% filter(as.character(group) == gr)
+  ddd <- dd[which(dd$group == gr),]
+  
+  subt1 <- txt[paste0(gr, ".underlying"), lang]  
+  
+  # ititle & icon
+  icon.path <- group2icon[which(group2icon$group == gr), 'icon'] %>% unlist()
+  icon.html <- ifelse(icon.path == 'NA', '', paste0('<img src="', icon.path, '" alt="',  gr ,' icon" height="27" width="27">'))
+  tit <- paste0(icon.html,  "&nbsp; ", txt[gr, lang])
+  
+  ddd$tooltip <- paste0(
+    "<b>", as.character(ddd$ct), "</b><br>",
+    ddd$prop * 100, "%",'<div><span style="font-size: 0.8em">',
+    gsub("'", "_", txt[gr, lang]), "<br>(", ddd$value, " / ", ddd$total, ")",
+    "</span></div>"
+  )    
+  
+  chart <- ggplot(
+    data = ddd, 
+    aes(
+      x = ct, 
+      tooltip = tooltip, 
+      data_id_ = ct, 
+      y = prop, 
+      group = ct, 
+      fill = ct)
+    ) + 
+    geom_bar_interactive(stat = "identity")  +
+    myTheme(
+      base_family = txt['base_family', lang], 
+      title_family = txt['title_family', lang],
+      x.label.margin = as.numeric(txt['x.label.margin', lang])
+    ) + 
+    scale_fill_manual(values = swi_rpal, drop = F) +
+    scale_y_continuous(name = "", breaks = pretty_breaks(n = 3), limits = c(0, maxV), labels = percent) + 
+    scale_x_discrete(name = "", expand = c(0,0.1), drop=FALSE)
+  
+  gg <- chart +
+    geom_hline(
+      data = d.all %>% filter(group == gr), 
+      aes(yintercept = prop.all), 
+      linetype = 2, size = 1, alpha = 0.8, colour = "#00334d"
+    ) +
+    geom_text(
+      aes(label = iso2c), vjust = 1.8, 
+      color = "#f7f5ed", family = txt['title_family', lang], size = 3.8
+    ) 
+  list(chart = gg, title = tit, subtitle = subt1, pad = txt[paste0(gr,".padding"), lang])
+}
+
+maxV <- max(data$prop)
+
+```
+
+
+```{r prod graphics, include = F}
+
+lang <- 'ZH'
+gr <- 'Team Sports'
+
+for (lang in colnames(txt)) {
+  cat("\n", lang)
+  
+  dd <- data
+  sp <- sports
+  
+  ## get tranlsations
+  midx <- match(dd$iso3, row.names(txt))
+  stopifnot(!any(is.na(midx)))
+  dd$ct <- txt[midx, lang]
+  # order country levels
+  midx <- dd[match(levels(dd$country), dd$country), 'iso3'] %>% unlist()
+  stopifnot(!any(is.na(midx)))
+  dd$ct <- factor(dd$ct, levels = txt[match(midx, row.names(txt)), lang])
+ 
+  midx <- match(as.character(dd$group), row.names(txt))
+  stopifnot(!any(is.na(midx)))
+  dd$gr <- txt[midx, lang]
+  
+  midx <- match(paste0(sp$group, ".underlying"), row.names(txt))
+  if(any(is.na(midx))) {
+    stop(paste0(sp$group, ".underlying")[is.na(midx)])
+  }
+  sp$gr <- txt[midx, lang]
+  
+  # magic happening
+  charts <- lapply(levels(dd$group), function(gr) graphGroup(dd = dd, sp = sp, gr, d.all, group2icon))
+
+  save_html(
+    tags$html(
+      tags$head(includeHTML("styles.html")),
+      tags$body(
+        h2(HTML(txt["main.title", lang])),
+        div(class = "descr", HTML(paste0(txt["descr1", lang], "<br><br>", "<i>", txt["descr2", lang], "</i>"))),
+        div(class = "container",
+            lapply(1:length(charts), function(i) {
+              div(class = "graphic", 
+                  h3(HTML(charts[[i]]$title)),
+                  div(class = "subtitle",  HTML(paste0(charts[[i]]$subtitle, charts[[i]]$pad))),
+                  interactive_chart(charts[[i]]$chart)
+              )      
+            })
+        ),
+        div(id = "cite", HTML(paste0(txt['source', lang], ": ", txt['source.name', lang]), " | swissinfo.ch |", htmlLink("https://twitter.com/duc_qn", "@duc_qn"))),
+        HTML(iframeresizer)
+      )), file = paste0("rio2016_barBySportAndNations_", lang, ".html"), libdir = "js"
+  )
+}
+```
+
+```{r some stats}
+if(computeStats) {
+  
+  # Countries with at least 100 athletest at Rio
+  n100 <- dat %>% filter(total > 100) %>% select (country) %>% unlist %>% unique()
+  length(n100)
+  
+  # non team
+   dat %>% filter(group == 'Team Sports', total > 100) %>% 
+    arrange(prop)
+   team.ct100 <- dat %>% filter(group == 'Team Sports', total > 100) %>% select(country) %>% unlist()
+   n100[which(!n100 %in% team.ct100)]
+   
+   
+  # most combat nation
+  dat %>% filter(group == 'Combat Sports', total > 100) %>% 
+    arrange(desc(prop))
+
+    # cycling
+  dat %>% filter(group == 'Cycling', total > 100) %>% 
+    arrange(desc(prop))
+  dat %>% filter(group == 'Cycling') %>% 
+    arrange(desc(value))
+
+  cat("\n Out of all country delegations of at least 100 (", length(n100), "), Switzerland has the highest proportion of cylists (15.5%)") 
+  
+  dat %>% filter(group == 'Sailing', total > 100) %>% 
+    arrange(desc(prop)) %>% head(20)
+  dat %>% filter(group == 'Sailing') %>% 
+    arrange(desc(value))
+  
+  
+  dat %>% filter(group == 'Equestrian', total > 100) %>% 
+    arrange(desc(prop)) %>% head(20)
+  dat %>% filter(group == 'Equestrian') %>% 
+    arrange(desc(value))
+  
+  
+    
+  dat %>% filter(group == 'Rowing', total > 100) %>% 
+    arrange(desc(prop)) %>% head(20)
+  dat %>% filter(group == 'Rowing') %>% 
+    arrange(desc(value))
+  
+}
+
+```

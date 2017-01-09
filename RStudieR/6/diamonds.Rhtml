@@ -1,0 +1,30 @@
+<html>
+  <head><title>Examples</title></head>
+  
+  <body>
+
+  <p>Simplest possible chunk, no name or options specified.</p>
+
+<!--begin.rcode
+  library(ggplot2)
+  ggplot(diamonds, aes(x=color)) + geom_bar()
+end.rcode-->
+
+  <p>A named chunk, aligned center.  Using ggplot2 (loaded in the previous chunk ).</p>
+
+<!--begin.rcode html-diamond-bar, fig.align='center'
+  ggplot(diamonds, aes(x=color, fill=color)) + geom_bar()
+end.rcode-->
+
+  <p>Inline examples:</p>
+  <ul>
+    <li>1 + 3 = <!--rinline 1 + 3 -->.</li>
+    <li>&pi; =  <!--rinline pi -->.</li>
+  </ul>
+
+  <a href="http://cran.r-project.org/web/packages/knitr/vignettes/knitr-refcard.pdf">
+    knitr Reference Card
+  </a>
+
+  </body>
+</html>

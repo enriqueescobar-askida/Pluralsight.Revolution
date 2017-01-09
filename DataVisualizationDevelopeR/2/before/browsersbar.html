@@ -1,0 +1,37 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['Browser', 'Usage', {role: 'style'}],
+          ['Chrome', .341, 'blue'],
+          ['Internet Explorer', .203, 'red'],
+          ['Safari',  .178, 'green'],
+          ['Firefox', .183, 'orange'],
+          ['Other', .095, 'Gray']
+        ]);
+
+       
+        var formatter = new google.visualization.NumberFormat({pattern:'#.#%'});
+        formatter.format(data, 1);
+        
+        var options = {
+            legend : { position: 'none'},
+            vAxis: { format: '##%'},
+            bar: { groupWidth: "95%"}
+         };
+
+        var chart = new google.visualization.ColumnChart(document.getElementById('piechart_3d'));
+        chart.draw(data, options);
+      }
+    </script>
+  </head>
+  <body>
+    <h1 style="text-align: center">Comparing web browsers</h1>
+    <div id="piechart_3d" style="width: 900px; height: 500px; margin-left: auto; margin-right: auto  "></div>
+  </body>
+</html>

@@ -1,0 +1,2 @@
+Visit http://AdvancedApex.com/VisualizationCourse for a link to the package containing sample code for this module.
+The before directory contains the original census data on which this module's charts are based.

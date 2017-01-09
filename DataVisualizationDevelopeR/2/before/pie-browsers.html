@@ -1,0 +1,35 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script src="libraries/RGraph.common.core.js" ></script>
+    <script src="libraries/RGraph.common.key.js"></script>
+    <script src="libraries/RGraph.pie.js" ></script>
+    
+    <title>Comparing web browers</title>
+    
+    <meta name="description" content="A basic pie chart" />
+
+    <script>
+        window.onload = function ()
+        {
+            var hpie = new RGraph.Pie('cvs',[.341, .203, .178, .183, .095]);
+            hpie.Set('key', ['Chrome', 'Internet Explorer', 'Safari','Firefox','Other']);
+            hpie.Draw();            
+        }
+    </script>
+     
+</head>
+<body>
+
+    <h1 style="text-align: center">Comparing web browsers</h1>
+    <div style="text-align: center">
+        <canvas id="cvs" width="800" height="400">[No canvas support]</canvas>
+    </div>
+    
+
+
+
+</body>
+</html>

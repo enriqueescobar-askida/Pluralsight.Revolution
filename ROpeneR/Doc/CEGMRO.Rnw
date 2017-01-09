@@ -1,0 +1,1200 @@
+\documentclass[11pt]{article}
+\usepackage{mathpazo}
+\usepackage{inconsolata}
+\usepackage{imakeidx}
+\normalfont
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.75in]{geometry}
+\usepackage{parskip}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage[svgnames]{xcolor}
+\hypersetup{
+  colorlinks   = true, %  color links (instead of boxes)
+  urlcolor     = Blue, %  external hyperlinks
+  linkcolor    = Maroon, %  internal links
+}
+\makeindex[intoc]
+\begin{document}
+\thispagestyle{empty}
+\begin{flushright}
+\huge{\bfseries{}Effective Graphs with \\ Microsoft R Open}\par
+\vspace{.4\textheight}
+\Large{\emph{Naomi B. Robbins and Joyce Robbins}}\par
+\end{flushright}
+
+\clearpage
+\tableofcontents
+<<include=FALSE, cache=FALSE>>=
+library(knitr)
+library(xtable)
+options (width = 55, str = list(strict.width = "wrap"))
+knit_hooks$set(crop = hook_pdfcrop,
+               par = function (before, options, envir){
+                   if (before) par(bg = 'white')
+               })
+opts_chunk$set(fig.align='center',
+               crop=TRUE, cache=TRUE, echo = FALSE,
+               message = FALSE, out.width='.75\\textwidth',
+               comment = NA, par = TRUE, fig.path = 'CEGMROfigs/',
+               cache.path = 'CEGMROcache/')
+getfigopts <- function() {
+    getfigopts <- opts_current$get(c("fig.width","fig.height"))
+}
+showfigopts <- function(x = getfigopts()) {
+    cat(paste0("#+ fig.width = ",x[[1]],", fig.height = ",x[[2]]))
+}
+@
+\section*{Book web site}
+A Github site, \href{https://www.github.com/nbrgraphs/mro}{https://www.github.com/nbrgraphs/mro}, is available for downloading an electronic version of this document, code scripts for the graphs here, and additional code scripts for \textbf{ggplot2} versions of many of the graphs.
+\pagebreak
+\section{Introduction}
+\subsection{Why visualize data?}
+Graphs help us understand data in a way that simply cannot be matched with numbers and calculations alone. It's hard to find a data set that makes this case better than the one devised by Frank Anscombe\index{Anscombe's quartet|(} to illustrate the power of visual representation. The set is one of R's many built-in data sets. It consists of 88 observations: four groups of eleven (x,y) pairs.
+
+Summary statistics suggest that the groups are quite similar:
+\bigskip
+\bigskip
+\begin{center}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{>{\raggedright}m{2.25in}>{\raggedright}m{2in}}
+\hline
+\textbf{Property}  \small{(by group)} & \textbf{Value}  \tabularnewline
+\hline
+Mean of \emph{x} & 9 {\footnotesize{}(exact)}\tabularnewline
+Variance of \emph{x}  & 11 {\footnotesize{}(exact)}\tabularnewline
+Mean of \emph{y}  & 7.50 {\footnotesize{}(to 2 decimal places)}\tabularnewline
+Variance of \emph{y} & 4.122 or 4.127 {\footnotesize{}(to 3 decimal places)}\tabularnewline
+Correlation between \emph{x} and \emph{y} & 0.816 {\footnotesize{}(to 3 decimal places)}\tabularnewline
+Linear regression line & \emph{y} = 3.00 + 0.500\emph{x} \footnotesize{(to 2 and 3 decimal places, respectively)}\tabularnewline
+\hline
+\tabularnewline
+\end{tabular}
+\end{center}
+
+
+But if we graph the data, the results are striking:
+
+\bigskip
+<<anscombe, fig.width = 7, fig.height = 5, out.width='.65\\textwidth'>>=
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+ans <- anscombe
+ans$id <- as.numeric(rownames(anscombe))
+ans <- ans %>% gather(key,value,-id) %>%
+	extract (key,c("var","group"),"(.)(.)") %>%
+	spread(var,value)
+ans$group <- factor(ans$group)
+ans <- ans %>% arrange(group)
+g <- ggplot(ans,aes(x,y))
+g + geom_point() + facet_wrap(~group) +
+    coord_fixed(ratio = 1.3) +
+	ggtitle("Anscombe's Quartet") + theme_bw(16)
+@
+\bigskip
+In an instant each group appears distinct and unique, each clearly reflecting a different empirical reality. It is surely aha moments like this that led statistician and data visualization expert John Tukey to claim that his favorite part of analytics was "taking boring flat data and bringing it to life through visualization."\index{Tukey, John}\index{Anscombe's quartet|)}
+
+\subsection{Why use R?} \index{R, advantages of|(}
+With computers we have the power to visualize data in ways that were unimaginable with only pencil and paper. There is a great variety of software packages and programming languages that provide the tools for drawing graphs. A bit of history is important for understanding one reason why R is so well-suited to the task. A dialect of the S language\index{S language|(}, R was developed by Ross Ihaka and Robert Gentleman at the University of Auckland, New Zealand in the 1990s as an open source alternative to S-PLUS, the commercial version of S available at the time. The original S language was developed in the Statistical Research Department of Bell Laboratories\index{Bell Laboratories}, the same department in which William Cleveland \index{Cleveland, William} and his colleagues studied how perception\index{perception} influences our ability to decode information from graphs. Thanks to fruitful interaction between these projects, many graphing defaults in S\index{S language|)}
+ were influenced by Cleveland's research, and passed along to R. For this reason, it stands out among software options for drawing effective graphs.
+\index{packages|(}
+
+R consists of a base language and user-contributed packages--of which over 8000 are currently available in the CRAN repository alone--that provide great depth and flexibility to the language. Packages can be conveniently explored on the \href{https://mran.microsoft.com/packages}{Microsoft R Portal}.\index{Microsoft R Portal}\footnote{\href{https://mran.microsoft.com/packages}{https://mran.microsoft.com/packages}} There are R packages for most statistical methods and new ones are regularly being added. All of the code is publicly available so users can tweak it to their requirements and are not forced to accept preprogrammed options. This makes R very adaptable and extensible. Since R is a language rather than a program, what you can do is limited only by your imagination.\index{packages|)}
+
+Furthermore, R users have formed an active and helpful community on and offline, a great resource for beginning and experienced programmers alike. User groups, blogs, R-Help, and Stack Overflow are a few of the many ways R users share knowledge and offer guidance.  Package developers often respond directly to user questions and feedback, so the development of R is truly a collaborative effort. While many statistical and graphics software packages are very expensive, R is open source.\index{R, advantages of|)}
+
+\subsection{Why use Microsoft R Open?} \index{Microsoft R Open|(}
+With all these benefits, there are some deficits. The downside to having so many package authors is the lack of coordination among them. Many packages depend on others. Therefore, a change or update in one package may have a ripple effect, causing errors or faulty output. This can make it difficult to share code, or even rerun one's own code at a later date. Another downside is R's lack of ability to take advantage of parallel processing power.
+
+Microsoft R Open (MRO), formerly Revolution R Open, was designed by Revolution Analytics\index{Revolution Analytics} to tackle these issues. It is an enhanced R distribution that standardizes the package landscape by fixing it in a particular point in time. Standardization provides consistency when installing packages, as all are downloaded from the same CRAN \index{CRAN} repository snapshot. Using a fixed snapshot allows for reproducibility\index{reproducibility} over time and among users. It is a great relief to be able to reuse or share code without worrying about the compatibility of R packages. Reproducibility is further enhanced in MRO with the \textbf{checkpoint} package\index{packages!checkpoint@\textbf{checkpoint}}, which allows users to run R as it existed at a prior date.  MRO is free and open source, and runs on Windows, Linux, and Mac systems.
+
+To take advantage of the speed of multi-core processors, MRO provides optional multi-threaded math libraries. With these libraries, R makes use of all of the processing power available and computation times \index{computation time} are significantly reduced. It is not necessary to change any code to benefit from the speed enhancements. Finally, MRO works well with RStudio: if MRO is installed, RStudio will automatically find it and use it as the R engine. Installing MRO doesn't change the way you interact with R at all. In fact, the only difference you'll notice is the Microsoft R Open message that appears after restarting R, indicating the version number and date of the default CRAN \index{CRAN} mirror snapshot.
+
+\subsection{How do I start using Microsoft R Open?}
+The first step is to \href{https://mran.microsoft.com/download/}{download Microsoft R Open}.\footnote{\href{https://mran.microsoft.com/download/} {https://mran.microsoft.com/download/}} We assume that the reader has a basic familiarity with the R language, but beginning R users can type in the examples here and run them, without any prior knowledge. This text focuses on graphical functions; for a general introduction to R, the Microsoft R Portal\index{Microsoft R Portal} provides \href{https://mran.microsoft.com/documents/getting-started/}{a great list of resources for getting started.}\footnote{\href{https://mran.microsoft.com/documents/getting-started/}{https://mran.microsoft.com/documents/getting-started/}} For data visualization, it is particularly important to understand how to work with data frames, vectors, and matrices, and to master the factor class. R Help can be easily accessed by entering a question mark before any R command or function in the console, for example: \texttt{?barplot}. \index{R Help}Online R resources abound; \href{http://stackoverflow.com}{Stack Overflow}\footnote{\href{http://stackoverflow.com}{http://stackoverflow.com}} has become the go-to source for answers to R questions.\index{Microsoft R Open|)}
+
+\subsection{Which graphics package should I use?}\index{base graphics|(} \index{packages|(}
+An oft-asked question is whether to use the \textbf{graphics} package that comes with the R distribution, subsequently referred to as "base graphics," or an alternative graphics package. Packages such as \textbf{ggplot2}\index{packages!ggplot2@{\bf ggplot2}} or \textbf{lattice} are built on \textbf{grid} \index{packages!grid@{\bf grid}} graphics, completely independent of the base graphics system. Therefore, it is not necessary to know base graphics in order to learn one of these \textbf{grid}-based packages. Starting with base graphics in our view, however, is worthwhile, as it will always be useful even if you end up doing most of your work with another package. For example, while \textbf{ggplot2} \index{packages!ggplot2@{\bf ggplot2}} is quite powerful, it requires data to be in a data frame in a particular form. Therefore, for a quick plot of a vector, we are more likely to turn to base graphics and use functions like \texttt{plot()}, {\tt barplot()}, {\tt hist()}, etc. Base graphics is better as well for drawing highly specialized plots that combine a variety of different elements. We struggled with which to include here as both are popular choices, and decided to use base graphics in the main examples, but provide \textbf{ggplot2} \index{packages!ggplot2@{\bf ggplot2}} code \href{https://github.com/nbrgraphs/mro}{on Github} for most of the plots.\footnote{\href{https://github.com/nbrgraphs/mro}{https://github.com/nbrgraphs/mro}} If you're learning \textbf{ggplot2} \index{packages!ggplot2@{\bf ggplot2}} you may want to try replicating the plots on your own before looking at our code.\index{base graphics|)}
+
+While the majority of the graphs here are drawn with base graphics, we also include some examples from \textbf{ggplot2, lattice, HH, MASS, and micromapST}\index{packages!lattice@{\bf lattice}}\index{packages!HH@{\bf HH}}\index{packages!MASS@{\bf MASS}}\index{packages!micromapST@{\bf micromapST}}\index{packages!ggplot2@{\bf ggplot2}}. The learning curve for new packages varies widely. While \textbf{ggplot2}\index{packages!ggplot2@{\bf ggplot2}} offers a new vocabulary and tools for constructing plots from the ground up, many packages are in reality collections of scripts that produce complex plots with minimal effort. By experimenting with functions from a variety packages, you will quickly expand your repertoire of graphs. At the same time, it's important to note that packages vary in their adherence to principles of good design. We encourage you not to assume that plot defaults are well-chosen, and override them as necessary to improve your graphs.\index{packages|)}
+
+\subsection{How should I size and save my graphs?}\label{size}\index{graphics devices|(}
+If no graphics device is specified, the default in R is to send the graphics to the on-screen device, "the plot window." In short, you type a graphics command into the console, such as \texttt{plot(1:10,1:10)}, and you see it right away. The downside is that this on-screen device varies from system to system, and your images will not transfer well. While it's fine for experimentation purposes to use the plot window, once you start caring about specific dimensions and sizes, you'll need another option. There are two routes you can go from here. One is to call a device driver, with a command such as \texttt{bmp(), jpg(), pdf(), png(), jpg(),} or \texttt{tiff(),} and turn it off after the plot is complete:
+\medskip
+<<echo = TRUE, eval = FALSE>>=
+pdf("savedplot.pdf", width = 7, height = 5)
+plot(1:10, 1:10)
+dev.off()
+@
+\medskip
+For more on getting your plots to look good with this method, see David Smith's \href{http://blog.revolutionanalytics.com/2009/01/10-tips-for-making-your-r-graphics-look-their-best.html}{"10 tips for making your R graphics look their best."}\footnote{\href{http://blog.revolutionanalytics.com/2009/01/10-tips-for-making-your-r-graphics-look-their-best.html}{http://blog.revolutionanalytics.com/2009/01/10-tips-for-making-your-r-graphics-look-their-best.html}}
+
+A second route is to use Yihui Xie's \href{http://yihui.name/knitr/}{\textbf{knitr} package}\index{packages!knitr@{\bf knitr}}\footnote{\href{http://yihui.name/knitr/}{http://yihui.name/knitr/}} to simultaneously create text and plots, and combine them in an output document, as we did to create this publication. We cannot go into detail about \textbf{knitr} here, but for anyone who is interested, we have posted the \textsf{.Rnw} document containing all of our code and text \href{https://github.com/nbrgraphs/mro}{on Github}.\footnote{\href{https://github.com/nbrgraphs/mro}{https://github.com/nbrgraphs/mro}}
+\index{plot sizes|(}
+
+Since sizing instructions are contained in the chunk options with \textbf{knitr} and not in the code itself, and since this is important information to have, we choose to make the figure height and width settings visible at the top of our code sections so you can reproduce our plot sizes, no matter what system you use to create your plots. For example, a line like this:
+<<fig.height = 3.5, fig.width = 6>>=
+x <- getfigopts()
+showfigopts(x)
+@
+indicates that we set the figure width to 6 inches and the figure height to 3.5 inches. There are many ways you can replicate this, depending on your workflow and image type preferences:
+\bigskip
+<<echo = TRUE, eval = FALSE>>=
+pdf("mypdf.pdf", width = 6, height = 3.5)       #pdf
+@
+
+<<echo = TRUE, eval = FALSE>>=
+png("mypng.png", width = 6, height = 3.5,       #png
+    units ="in", res = 72)
+@
+
+<<echo = TRUE, eval = FALSE>>=
+```{r myplot, fig.width = 6, fig.height = 3.5}  #R Markdown
+@
+
+\medskip
+Of course, the plots will not be identical in different image types, and you'll need to experiment to get the results you want. Our figure sizes, though, can be used as a starting point.\index{plot sizes|)}\index{graphics devices|)}
+
+\subsection{What is an effective graph?} \index{effective graphs|(}
+Different authors assign different meanings to the term, "effective graph." To some, a graph is effective if it attracts attention. As data analysts, however, we are more concerned with comprehension and clarity than bells and whistles. We call one graph more effective than another if most readers can decode the information more quickly or more accurately from it than from the other. More often than not, fancier and more complex is less effective. Edward Tufte's \index{Tufte, Edward} \hyperref[bib]{\emph{The Visual Display of Quantitative Information}} and William Cleveland's \index{Cleveland, William} \hyperref[bib]{\emph{The Elements of Graphing Data}} remain the classics for understanding what it takes for a graph to be effective and are must-reads for data visualization professionals. For an introduction to the subject, with a focus on putting principles into action, see \hyperref[bib]{\emph{Creating More Effective Graphs}} by Naomi B. Robbins.\index{Robbins, Naomi}
+
+In a nutshell, it is crucial that your chart type and design elements be compatible with the type of data you have, the message you're trying to communicate, and your audience. Many software packages offer "chart choosers" \index{chart choosers, problems} to help the designer select an appropriate chart. It would be convenient if these worked, but unfortunately, it is often the case that they do not. Each data set is unique, and what works for one may not work for another, even one that has the same size and shape and contains the same type of variables. More importantly, the best graph depends on the aspect of the data you wish to emphasize.
+
+Experimenting with different chart types and options will lead to a deeper understanding of your data set, and help you select the graphics type that is best suited to your purposes. Naomi's \index{Robbins, Naomi} \emph{Forbes} blog post \href{http://www.forbes.com/sites/naomirobbins/2011/11/29/thinking-outside-the-chart-menu/}{"Thinking Outside the Chart Menu"}\footnote{\href{http://www.forbes.com/sites/naomirobbins/2011/11/29/thinking-outside-the-chart-menu/}{http://www.forbes.com/sites/naomirobbins/2011/11/29/thinking-outside-the-chart-menu/}} describes how thinking about the meaning of the data set led to an innovative use of diverging stacked bar charts (discussed in section \ref{diverging}). This chart type was coded by Richard Heiberger \index{Heiberger, Richard} and added as the \texttt{likert()} \index{likert@{\tt likert()}} function to the \textbf{HH}\index{packages!HH@{\bf HH}} package, a testament to the creativity and flexibility of the R user community.
+
+Finally, we reject the idea we often hear that data visualization as part of exploratory data analysis\index{exploratory data analysis} (EDA) is very different from data visualization for presentation. To be sure, details like font size are not part of EDA. However, the graphical forms that spark insights for you \emph{will} in general be the same ones you'll want to share with others.\index{effective graphs|)}
+
+\pagebreak
+\section{Direct Comparisons}
+\subsection{Bar charts (base)} \index{bar charts!simple|(}
+
+Bar charts are a common and effective means to show direct comparisons for small data sets. With base graphics, bar charts are drawn with the \texttt{barplot()}\index{barplot@{\tt barplot()}} function, which takes a numeric vector of lengths as the main argument. For a very simple bar chart, try \texttt{barplot(1:5)}.
+\index{datasets!fertility rates|(}
+In this example we wish to compare the total fertility rate (measured in average total births per woman) of countries in Central America:
+\bigskip
+<<barplot, fig.width = 7, fig.height = 4, echo = FALSE, out.width='.8\\textwidth'>>=
+n <- getfigopts()
+TFR <- c(2.6, 1.9, 2.0, 3.3, 2.5, 2.3, 2.5)
+names(TFR) <- c("Belize", "Costa Rica", "El Salvador",
+               "Guatemala","Honduras", "Nicaragua",
+               "Panama")
+TFR <- sort(TFR)
+par(mar=c(5,8,4,2))
+barplot (TFR, horiz = TRUE,
+         col = "lightblue",
+         border = "lightblue",
+         main ="Central America, Fertility Rate 2012",
+         xlab = "average births per woman",
+         xlim = c(0,4),
+         cex.lab = 1.4,
+         cex.main = 1.7,
+         cex.names = 1.4,
+         las = 1)
+abline(v = 1:4, col = "grey90")
+@
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label='barplot', echo = -1, eval = FALSE>>=
+@
+\bigskip
+Here \texttt{TFR} is a vector of fertility rates. We use \texttt{names()}\index{names@{\tt names()}} to assign country names to each vector element since \texttt{barplot()}\index{barplot@{\tt barplot()}} automatically uses these names to label the bars. While \texttt{barplot(TFR)} is all that is needed to produce a simple bar chart, we make several adjustments to make the chart easier to interpret. Unless there is an order to the data that shouldn't be altered, the bars should be organized in length order. Therefore, before plotting we sort the data in numerical order.
+
+For accurate perception, bars must start at 0. This may be the default... if it is, don't change it!
+
+We generally prefer horizontal bars\index{horizontal bars} (\texttt{horiz} = \texttt{TRUE}) since the eye more readily perceives differences in length\index{length, judging} of bars stacked on top of each other rather than next to each other. In addition, a horizontal bar chart provides more space for the relative long country names, avoiding the problem of crowded, vertical names on the x-axis. We change the orientation of the axis labels to horizontal with \texttt{(las=1)}\index{horizontal axis labels}.
+
+Changing the plot margins\index{margins} with \texttt{par(mar=c(5,8,4,2))} \index{parmar@\{\tt par(mar=)}} makes space for the country labels. These four numbers refer to the bottom, left, top, and right plot margins, respectively. The defaults are 5.1, 4.1, 4.1, and 2.1, measured in lines of text from the edge of the plot region. (See \hyperref[bib]{Murrell (2011)}, Ch. 3,\index{Murrell, Paul} for a thorough discussion of plotting regions.) Trial and error determines that a left margin of 8 produces enough space.
+
+Next we set the x-axis limits \index{axis limits} with \texttt{xlim=c(0,4)}. The defaults in base R may produce axes that don't include all the data, which is not ideal. The bar perimeter color is controlled with \texttt{(border=)} and the fill color with \texttt{(col=)}. We use the same color for both since the default black borders are distracting.
+
+The \texttt{cex.lab}, \texttt{cex.main} and \texttt{cex.names} parameters enlarge the text of the bar labels, axis labels, and title, respectively. The setting (1.4 or 1.7 in this case) represents the number of times larger (or smaller) to make the text relative to the default size. In general, we prefer font sizes that are large but not overpowering. The title size (\texttt{cex.main}) should be larger than the axis label (\texttt{cex.lab}) and bar label size (\texttt{cex.names}), which in turn should be larger than the tick mark label size (\texttt{cex.axis}). (Since we wished to keep the default of 1, we did not set \texttt{cex.axis} in this example.)
+
+Gridlines help the reader estimate the value of the data but should be minimal and subtle. In this case, only vertical gridlines \index{gridlines} are necessary. We add gridlines with the \texttt{abline()} \index{abline@{\tt abline()}|(} function: vertical lines\index{vertical lines} are drawn with \texttt{(v=)} and horizontal ones\index{horizontal lines} with \texttt{(h=)}. Making use of the colon (:) to generate integer sequences in R, \texttt{abline(v=1:4)} draws vertical lines at x = 1, x = 2, x = 3, and x = 4. Note that \texttt{abline()} can only be called to add lines to an existing plot. We set the color of the lines to a very light grey--"\texttt{grey90}"--so the lines won't interfere with the data, the "main attraction."\index{abline@{\tt abline()}|)} Colors can be set in many ways. Using the \href{http://research.stowers-institute.org/efg/R/Color/Chart/ColorChart.pdf}{657 named colors}\footnote{\href{http://research.stowers-institute.org/efg/R/Color/Chart/ColorChart.pdf}{http://research.stowers-institute.org/efg/R/Color/Chart/ColorChart.pdf}} is convenient since it makes the code easier to read. A list of the color names can be obtained by typing \texttt{colors()} in the console.\index{colors@{\tt colors()}}
+
+Finally, we wish to make the bars narrower as the thick bars take up space without adding any information. Narrow bars are also more pleasing to the eye. While \texttt{barplot()}\index{barplot@{\tt barplot()}} takes a \texttt{(width=)} argument, it only works if \texttt{(xlim=)}, or \texttt{(ylim=)} for a horizontal bar chart, is adjusted, and even then other adjustments need to be made to keep the plot proportional. Therefore, we prefer to adjust the bar width by changing the figure height. The method will change depending on the graphics device in use. With \textbf{knitr}\index{packages!knitr@{\bf knitr}} we add \texttt{fig.width=7}\index{figure width} and \texttt{fig.height=4}\index{figure height} to the chunk options (see section \ref{size} for more on sizing graphics).
+
+\index{bar charts!simple|)}
+\subsection{Dot plots (base)} \index{dot plots|(}
+Bars get cluttered quickly. It's hard to give an exact number but if the graph is looking crowded, consider switching to a Cleveland \index{Cleveland, William}dot plot. It can accommodate many more data points, and is a better choice for log scales and showing error bars. Unlike bar charts, the axis scale does not need to start at zero, since we are judging position\index{position, judging} rather than length\index{length, judging}. Here we show the total fertility rate for a larger sample of countries (see Appendix \ref{countrydata} for the data and source). The sample is subsetted from the full data set with \texttt{index <- seq(from=1}, \texttt{to=179}, \texttt{by=4)}, which creates an index of every fourth value beginning at \texttt{1}. If the paper size were larger or this list appeared online, there's no reason we couldn't use the full data set in a dot plot.
+
+\bigskip
+<<dotplot, fig.width = 7, fig.height = 8>>=
+n <- getfigopts()
+source("dotchartsolid.R")
+data <- read.csv("countries2012.csv")
+index <- seq(from = 1,to = 179, by = 4)
+sample <- data$TFR[index]
+names(sample) <- data$COUNTRY[index]
+sample <- sample[order(sample)]
+par(mar = c(5, 10, 4, 2))
+dotchartsolid(sample, cex = .8, pch = 16, xlim = c(1,7),
+              main = "Total Fertility Rate by Country",
+              xlab = "average births per woman",
+              adj = 1, cex.main = 2,cex.lab = 1.5)
+abline (v=2, col = "red")
+text (2, 12.5, "replacement rate", cex = .7, pos = 4,
+      col = "red")
+@
+\bigskip
+\index{dotchart@{\tt dotchart()}|(}
+Despite the advantages of the dot plot, it is rare to find it as a built-in option in data visualization software packages. R base graphics, however, does have a function, \texttt{dotchart()}, for this purpose. One simple adjustment to the defaults for a single series is to set the plotting symbol to a filled rather than an open circle with \texttt{(pch=16)}. When plotting multiple series, however, if symbols overlap\index{overlapping symbols}, the default open circles should be used.
+
+We prefer right-justified labels and solid gridlines\index{gridlines} to the default dotted ones produced by \texttt{dotchart()}. Neither the line type nor the justification is a parameter that can be passed to this plot type. However, it's easy in R to make changes quickly to built-in functions\index{functions, creating}--a feature we really like. In this case, type \texttt{dotchart}--without the parens--into the console to see the function code\index{functions, see code}. Without delving deep into the code, you'll see two \texttt{abline()} \index{abline@{\tt abline()}} calls that include {(lty="dotted")}. Copy the code into an R script, change the \texttt{lty} settings to \texttt{"solid"}, change the \texttt{(adj=0)} setting to \texttt{(adj=adj)} in the \texttt{text()} call that plots the labels, so the desired justification setting can be passed to the dot plot function: \texttt{(adj=1)} for right justification. To save the function for future use, it's best to change the name. Ours is called \texttt{dotchartsolid()}. It's saved in a file called \textsf{"dotchartsolid.R"} and is available \href{https://github.com/nbrgraphs/mro}{on Github}.\footnote{\href{https://github.com/nbrgraphs/mro}{https://github.com/nbrgraphs/mro}}\index{dotchart@{\tt dotchart()}|(}
+
+Annotating plots with relevant information can boost the reader's ability to interpret the data. In this case, a total fertility rate of "2" is a benchmark since it represents the rate needed to replace the current population size through childbirth. Adding a line indicating this benchmark, as we have done in red with \texttt{abline()}\index{abline@{\tt abline()}}, helps us readily identify which countries have total fertility rates above and below the replacement rate.
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label='dotplot', echo = -1, eval = FALSE>>=
+@
+\index{dot plots|)}
+\pagebreak
+\section{Distributions} \index{distributions|(}
+Often we are interested in how a variable is distributed. Is it symmetric or skewed? Is it multimodal or not? How spread out is it? In these cases we need a method for viewing the full distribution of the data. For a single data set, a histogram is a good tool for the job and an easy chart to create in R. To compare the distributions of several data sets or groups within one set, boxplots are a great choice.
+
+\subsection{Histograms (base)} \index{histograms|(}
+Each rectangle in a histogram is called a bin; it "holds" the number or percent of data points indicated on the y-axis. Be careful: although they look somewhat similar, a histogram is \emph{not} a bar chart. For more details on the difference, see Naomi's \href{http://www.forbes.com/sites/naomirobbins/2012/01/04/a-histogram-is-not-a-bar-chart/}{blog post on the topic.}\index{effective graphs blog on \emph{Forbes}}\footnote{\href{http://www.forbes.com/sites/naomirobbins/2012/01/04/a-histogram-is-not-a-bar-chart/}{http://www.forbes.com/sites/naomirobbins/2012/01/04/a-histogram-is-not-a-bar-chart/}} The number of bins can greatly affect the appearance of the histogram. As \href{http://planspace.org/20141225-how_does_r_calculate_histogram_break_points/}{Aaron Schumacher\index{Schumacher, Aaron} points out}\footnote{\href{http://planspace.org/20141225-how_does_r_calculate_histogram_break_points/}{http://planspace.org/20141225-how\_does\_r\_calculate\_histogram\_break\_points/}}, the process by which the bin size in R is determined is complex and not always optimal. There are several ways to use the \texttt{(breaks=)} parameter to set your own bin breakpoints. It will take an integer for the number of bins, but it will be adjusted according to a \emph{pretty} value, i.e., one that is 1, 2, or 5 times a power of 10. Tightest control of the bin limits is obtained by setting \texttt{(breaks=)} to a vector of positions such as: \texttt{seq(from=0}, \texttt{to=1000}, \texttt{by=50)}. We recommend trying different bin sizes. If an inconsistency appears, investigate further to determine its cause.
+
+In this example we use the full country (n = 179) list of total fertility rate data discussed in the previous section:
+\bigskip
+
+<<histogram, fig.width = 7, fig.height = 5>>=
+n <- getfigopts()
+x <- read.csv("countries2012.csv")
+hist(x$TFR, breaks = seq(from = 1, to = 8), col = "lightblue",
+     main = "Fertility Rate by Country",
+     xlab = "average births per woman",
+     xlim = c(1,8), ylim = c(0,80),
+     cex.main = 1.7, cex.lab = 1.4, las = 1)
+@
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label='histogram', echo = -1, eval = FALSE>>=
+@
+\bigskip
+We can clearly see from the histogram that the most common total fertility rate is between 1 and 2, and the distribution skews right. Dividing the bins in half with \texttt{breaks=seq(from=0}, \texttt{to=7}, \texttt{by=.5)} provides more detail:
+\bigskip
+<<histogram2, fig.width = 7, fig.height = 5>>=
+n <- getfigopts()
+x <- read.csv("countries2012.csv")
+hist(x$TFR, breaks = seq(from = 1, to = 8, by = .5),
+     col = "lightblue",
+     main = "Fertility Rate by Country",
+     xlab = "average births per woman",
+     xlim = c(1,8), ylim = c(0,50),
+     cex.main = 1.7, cex.lab = 1.4, las = 1)
+@
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label='histogram2', echo = -1, eval = FALSE>>=
+@
+\bigskip
+Again, we recommend caution when changing the bin size since not all choices represent the data well.
+\index{histograms|)}
+\subsection{Box plots (base)} \index{box plots|(}
+Box plots are far superior to histograms for displaying more than one distribution.
+Here we compare the distributions of total fertility rate by continent. We can clearly see that Africa not only has the highest median total fertility rate, but also the greatest range of rates. The opposite is the case for Europe.
+\bigskip
+<<boxplot, fig.width = 7, fig.height = 4.5, out.width='.9\\textwidth'>>=
+n <- getfigopts()
+# Box plots
+par(mar = c(5,9,4,2))
+data <- read.csv("countries2012.csv")
+data$CONTINENT <- reorder(data$CONTINENT, data$TFR, median)
+boxplot(TFR ~ CONTINENT, data, horizontal = TRUE,
+        ylim = c(1,8),
+        col = "lightblue",
+        main = "Fertility Rate Distributions by Continent",
+        xlab = "average births per woman", cex.main = 1.7,
+        cex.lab = 1.4, cex.axis = 1.4, las = 1)
+abline (v = 1:8, col = "grey95")
+abline (v = 2, col = "red")
+text (x = 2, y = .5, "<- replacement rate", col = "red",
+      pos = 4)
+@
+\bigskip
+\index{abline@{\tt abline()}}
+
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label='boxplot', echo = -1, eval = FALSE>>=
+@
+\bigskip \index{boxplot@{\tt boxplot()}|(}
+Passing the function \texttt{TFR$\sim$CONTINENT} as the first argument to \texttt{boxplot()} indicates how the full distribution of total fertility rates should be grouped. As we've seen previously, graphs are easier to decipher if the graphical elements are ordered by size. Since \texttt{boxplot()} plots the data in order of the factors, we sort the continent factor levels\index{factor level order} by median group total fertility rate with the \texttt{reorder()} function.\index{boxplot@{\tt boxplot()}|)}
+\index{box plots|)} \index{datasets!fertility rates|)}
+\pagebreak
+\section{Trends Over Time} \index{trends over time|(}
+\subsection{Line charts (base)} \index{line charts|(}
+The use of line charts to depict trends over time is a tried-and-true method: there is evidence from the 10th or 11th century of \href{http://visage.co/data-visualization-101-line-charts/}{a line chart showing planetary movements plotted against time.}\footnote{\href{http://visage.co/data-visualization-101-line-charts/}{http://visage.co/data-visualization-101-line-charts/}} Unlike bar charts, line charts do not need to have a zero baseline. The most common mistake we see with line charts is using evenly spaced tick marks to represent different amounts of time.
+
+The simplest way to create a line chart in R is to use \texttt{(type="l")} with the versatile \texttt{plot()}\index{plot@{\tt plot()}} function.\footnote{To see how versatile \texttt{plot()} really is, try each of the following: \texttt{plot(ChickWeight) plot(AirPassengers) plot(BOD) plot(HairEyeColor)}} Here we show the population of the U.S. from 2005-2015: \index{datasets!US population|(}
+\bigskip
+<<linechart, fig.width = 7, fig.height = 4.5>>=
+n <- getfigopts()
+# Line chart
+df <- data.frame (year = seq(2005,2015),
+                  pop = c(296, 298, 301, 304, 307, 308,
+                          311, 313, 315, 318, 320))
+plot(df$year, df$pop, type = "l",
+     main = "U.S. Population, 2005 - 2015", xlab = "",
+     ylab = "millions of people", las = 1,
+     cex.axis = 1.2, , cex.lab = 1.4, cex.main = 1.7)
+@
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label = 'linechart', echo = -1, eval = FALSE>>=
+@
+\index{datasets!US population|)}
+\bigskip
+\index{datasets!road casualties|(}
+Time-series objects, such as the built-in data set \texttt{UKDriverDeaths}, are simple to plot in R. This plot requires only one line of code.
+\bigskip
+<<linets, fig.width = 5, fig.height = 5>>=
+n <- getfigopts()
+plot(UKDriverDeaths,
+     main = "UK Road Casualities 1969-1984",
+     ylab = "monthly driver deaths", xlab = "", las = 1,
+     cex.main = 1.4, cex.lab = 1.2, cex.axis = 1.2)
+@
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label='linets', echo = -1, eval = FALSE>>=
+@
+\bigskip
+To convert a data set to a time-series object, we use the \texttt{ts()}\index{ts@{\tt ts()}} function, for example:\\
+<<echo = TRUE, eval = FALSE>>=
+data <- ts(data, start = c(2010,7), frequency = 12)
+@
+Time-series are particularly convenient for monthly \texttt{(frequency=12)} or quarterly \texttt{(frequency=4)} data.
+
+\subsection{Month plots (base)} \index{month plots|(}
+A nice R feature for time-series is the \texttt{monthplot()}\index{monthplot@{\tt monthplot()}} function, which groups the time series\index{time series} data by month and plots the data as 12 separate line charts on the same set of axes:
+\bigskip
+<<monthplot, fig.width = 8.5, fig.height = 4.5, out.width='.8\\textwidth'>>=
+n <- getfigopts()
+# Month plot
+par(mar=c(5,6,2,2))
+monthplot(UKDriverDeaths,
+          main="UK Road Casualities 1969-1984",
+          labels = month.abb, las = 1, ylab="",
+          cex.axis = 1.2, cex.main = 1.4)
+mtext("driver deaths", side = 2, line = 4, cex = 1.3)
+@
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label='monthplot', echo = -1, eval = FALSE>>=
+@
+\bigskip
+In the month plot, it is easy to see both the trend of decreasing deaths over time along with a pattern of increased deaths in the last several months of the year. We set \texttt{(labels=month.abb)} since the built-in month abbreviations are clearer than the \texttt{monthplot()} default of single letters to represent the months. Month plots are also called cycle plots. \index{datasets!road casualties|)} \index{month plots|)} \index{line charts|)} \index{trends over time|)}
+
+\pagebreak
+\section{Relationships} \index{relationships|(}
+\subsection{Scatterplots (base)} \index{scatterplots|(} \index{datasets!fertility rates|(}
+A scatterplot is a great tool for showing the relationship between two sets of data. Suppose, for example, we are interested in investigating whether there's a correlation \index{correlation} between gross domestic product (GDP) and total fertility rate (TFR). In base graphics either \texttt{plot(x,y)}\index{plot@{\tt plot()}} or \texttt{plot(y$\sim$x)} will plot the data on a coordinate system. Since some of the data points overlap, we use open circles (the default) for clarity. We divide GDP by 1000 to avoid either scientific notation or long strings of 0's on the x-axis, both of which may confuse readers. Of course, we must add "1000s" to the x-axis label for an accurate unit label.
+\bigskip
+<<scatterplot, fig.width = 5, fig.height = 5, out.width='.6\\textwidth'>>=
+n <- getfigopts()
+data <- read.csv("countries2012.csv")
+plot(data$GDP/1000,data$TFR, xpd = TRUE, bty = "l",
+     main = "Total Fertility Rate vs. GDP, 2012",
+     xlab = "GDP per capita (in 1000s $US)",
+     ylab = "average births per woman",
+     ylim = c(1,8), cex.main = 1.5,
+     cex.lab = 1.3, cex.axis = 1.1,
+     col = "cornflowerblue", las = 1)
+@
+\pagebreak
+<<>>=
+showfigopts(n)
+@
+
+
+<<ref.label='scatterplot', echo = -1, eval = FALSE>>=
+@
+\bigskip
+\index{labeling data points|(}
+We don't recommend overlabeling data points since the labels can interfere with the visibility of the data. If you feel a need to label the data points, it may be a sign that the plot type or parameters you've chosen aren't the best for showing off your data. That said, at times it may be useful to label one or more data points. To illustrate the method, in this example, we label the U.S. in magenta. We also replot the data point itself in magenta to avoid confusing it with nearby data points.\index{labeling data points|)}
+
+\bigskip
+<<scatterplotlabel, fig.width = 5, fig.height = 5, out.width='.6\\textwidth'>>=
+n <- getfigopts()
+# Scatterplot with one label
+data <- read.csv("countries2012.csv")
+plot(data$GDP/1000,data$TFR, xpd = TRUE, bty = "l",
+     main = "Total Fertility Rate vs. GDP, 2012",
+     xlab = "GDP per capita (in 1000s $US)",
+     ylab = "average births per woman",
+     ylim = c(1,8), cex.main = 1.5,
+     cex.lab = 1.3, cex.axis = 1.1,
+     col = "cornflowerblue", las = 1)
+usdata <- data[data$COUNTRY=="United States",]
+text (usdata$GDP/1000, usdata$TFR,
+      labels = usdata$COUNTRY, pos = 3, col = "magenta4")
+points (usdata$GDP/1000, usdata$TFR, cex = 1.2,
+      col = "magenta4")
+@
+\bigskip
+
+With the \texttt{text()}\index{text@{\tt text()}} function it is easy to label the point with the same coordinates we used to plot the data point. We use \texttt{(pos=3)} to place the label above the point, so the two don't overlap. Alternatively, the position of the labels can be adjusted by making minor changes to the coordinates. Setting the legend border with \texttt{(bty="l")} removes the top and right plot box lines, providing a cleaner look.
+\bigskip
+<<>>=
+showfigopts(n)
+@
+<<ref.label = 'scatterplotlabel', echo = -1, eval = FALSE>>=
+@
+\bigskip
+In the final scatter plot, we color the data points by continent:
+\bigskip
+<<colorscatterplot, fig.width = 5, fig.height = 5, out.width='.6\\textwidth'>>=
+n <- getfigopts()
+# Scatterplot with continents labeled by color
+data <- read.csv("countries2012.csv")
+colors6 <- c("orange","cyan","blue","green",
+              "black", "red")
+plot(data$GDP/1000,data$TFR, bty = "l",
+     col = colors6[data$CONTINENT],
+     xlab = "GDP per capita (in 1000s $US)",
+     ylab = "average births per woman",
+     main = "Total Fertility Rate vs. GDP, 2012",
+     las = 1, ylim = c(1,8), cex.main = 1.5, cex.lab = 1.3,
+     cex.axis = 1.1)
+legend("topright", pch = 21, legend=levels(data$CONTINENT),
+       col = colors6, bty = "n")
+@
+\bigskip
+<<>>=
+showfigopts(n)
+@
+<<ref.label='colorscatterplot', echo = -1, eval = FALSE>>=
+@
+\bigskip
+Note that by setting the color to \texttt{colors6[data\$CONTINENT]}, the vector of colors, \texttt{colors6}, is paired with the levels of the group variable \texttt{data\$CONTINENT}. Therefore it may be helpful to view the levels of the factor when choosing colors\index{factor level order} :
+<<echo = TRUE>>=
+levels(data$CONTINENT)
+@
+Colors should be rearranged so that nearby clusters such as Asia and Europe show as much contrast as possible. It is essential, though, that colors remain consistent within a report or presentation to avoid confusion.
+
+A legend \index{legends} is added with the \texttt{legend()}\index{legend@{\tt legend()}} function. The parameter \texttt{legend} is set to the levels of the group variable and the color to the corresponding vector of colors, \texttt{colors6}. The number of colors must be equal to the the number of factors for the legend to be drawn properly.
+
+\index{scatterplots|)}
+\subsection{Scatterplot matrices (lattice)} \index{scatterplot matrices|(}
+A scatterplot matrix is useful for viewing all two-way relationships in a multidimensional data set\index{multidimensional data}. For this example, we use the \texttt{splom()}\index{splom@{\tt splom()}} function in the \textbf{lattice}\index{packages!lattice@{\bf lattice}} package since we like its default settings, in particular the lack of margin space between panels. In the following plot, we can simultaneously look at the correlation \index{correlation} of any of the six pairs of variables among the four in our data set: total fertility rate (TFR), life expectancy (LIFEEXP), gross domestic product (GDP), and child mortality (CHMORT). Note that the six plots above the diagonal in the top left half of the graph are the same as the six in the bottom right half, with the axes flipped. For this reason, some recommend placing additional plots such as single variable histograms on one half the graph to avoid repetition. However, since relationships may be clearer with a particular variable on a particular axis, we prefer to fill the entire square with scatterplots, as shown.\footnote{For a more detailed explanation, \hyperref[bib]{see Jacoby (1998)}.} \index{Jacoby, William}
+
+\bigskip
+<<splomall, fig.width = 7, fig.height = 7, out.width='.6\\textwidth'>>=
+n <- getfigopts()
+library(lattice)
+data <- read.csv ("countries2012.csv")
+data$GDP <- data$GDP/1000
+splom(data[,c("GDP","TFR","LIFEEXP","CHMORT")],
+      scales = list(y = list(tick.number = 0)),
+      main = list(label = paste("World Development",
+                                "Indicator Correlations"),
+      cex = 1.7), xlab=NULL)
+@
+\bigskip
+
+The scatterplot matrix clearly shows the positive correlation \index{correlation} between child mortality rate and total fertility rate, and the negative correlations \index{correlation} between life expectancy and total fertility rate, and between life expectancy and child mortality. We also observe that all of the plots involving gross domestic product are L-shaped, indicating that the relationships are not linear.
+
+The plot is drawn in \textbf{lattice}\index{packages!lattice@{\bf lattice}} with a simple call to \texttt{splom()}\index{splom@{\tt splom()}}. The data is passed to the function as columns of a data frame.
+
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label = 'splomall', echo = -1, eval = FALSE>>=
+@
+\bigskip
+If we wish to observe continent clusters in the scatterplot matrix, as with the simple scatterplot, we set \texttt{col=colors3[data\$CONTINENT]}. We chose to limit the number of continents to three since any more would be hard to distinguish in small plots.
+\bigskip
+<<splomall2, fig.width = 7, fig.height = 7, out.width='.6\\textwidth'>>=
+n <- getfigopts()
+# Scatterplot matrix with continents in color
+library(lattice)
+colors3 <- c("orange","cyan","blue")
+data <- read.csv ("countries2012.csv")
+data$GDP <- data$GDP/1000
+data <- droplevels(data[data$CONTINENT %in%
+                            c("Europe","Asia","Africa"),])
+splom(data[,c("GDP","TFR","LIFEEXP","CHMORT")],
+      col = colors3[data$CONTINENT],
+      key = list(space="bottom",
+                 points=list(pch = 21, col=colors3),
+         text=list(levels(data$CONTINENT))),
+      main = list(label = paste("World Development",
+                                "Indicator Correlations"),
+      cex = 1.7), xlab=NULL)
+@
+\newpage
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label = 'splomall2', echo = -1, eval = FALSE>>=
+@
+\bigskip
+In addition to the correlations\index{correlation}, the color scatterplot matrix shows a clear continent effect. In the top left box, for example, we see that the vertical piece of the plot represents countries in Africa and the horizontal piece countries in Europe. Another method for identifying group effects is the parallel coordinate plot, which we'll describe in the next section.
+
+In \textbf{lattice}\index{packages!lattice@{\bf lattice}}, \texttt{(key=)} creates the legend\index{legends}. It is a list of lists containing information on the location \texttt{(space=)}, symbol color \texttt{lines=list(col=colors3)}, and text \texttt{text=list(levels(data\$CONTINENT))} for the legend. To ensure that the number of colors is equal to the number of factor levels, we used \texttt{droplevels()}\index{droplevels@{\tt droplevels()}} when subsetting the data to remove unused factor levels. An alternative would be to subset the first three elements of the factor levels vector when drawing the legend.
+\index{scatterplot matrices|)} \index{relationships|)}
+\subsection{Parallel coordinate plots (MASS)} \index{parallel coordinate plots|(}
+Graphs based on the coordinate system, such as the scatterplot, represent different variables on perpendicular axes. The problem is that we are limited to at most three dimensions, and even a third dimension can be difficult to decipher in two dimensional space. To cope with the challenge of displaying multidimensional data\index{multidimensional data}, the parallel coordinate plot represents the variables on parallel axes, greatly increasing the number of variables that can be conveniently and clearly displayed. Here we plot four world development indicators\index{datasets!world development|(} on a parallel coordinate plot, grouped by continent:
+\bigskip
+<<parallel, fig.width = 7, fig.height = 5, out.width='.8\\textwidth'>>=
+n <- getfigopts()
+library(MASS)
+par(bg='white')
+data <- read.csv ("countries2012.csv")
+colors6 <- c("orange","cyan","blue","green",
+              "black", "red")
+parcoord(data[,c("GDP","TFR","LIFEEXP","CHMORT")],
+         col = colors6[data$CONTINENT], xlim=c(1,5.25),
+         main = "World Development Indicators, by Continent",
+         cex.main = 1.4, xaxs = "i")
+axis(2, at = c(0,1), labels = c("min", "max"), las = 1,
+     tick = FALSE)
+legend("right", lty = 1, legend = levels(data$CONTINENT),
+       col = colors6, cex = .9, bty = "n")
+@
+\bigskip
+We use the \texttt{parcoord()}\index{parcoord@{\tt parcoord()}} in the \textbf{MASS} package\index{packages!MASS@{\bf MASS}} to create the parallel coordinate plot. The function scales each variable on a scale from 0 to 1. We use the \texttt{axis()}\index{axis@{\tt axis()}} function to label the top and bottom of the y-axis "max" and "min" respectively; \texttt{(tick=FALSE)} turns off the unnecessary axis line and tick marks.
+\bigskip
+
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label = 'parallel', echo = -1, eval = FALSE>>=
+@
+\bigskip
+The order of the axes can greatly influence the look of the graph, as the chart below demonstrates.
+\bigskip
+<<parallel2, fig.width = 7, fig.height = 5, out.width='.8\\textwidth'>>=
+n <- getfigopts()
+parcoord(data[,c("GDP","LIFEEXP","CHMORT","TFR")],
+         col = colors6[data$CONTINENT], xlim=c(1,5.25),
+         main = "World Development Indicators, by Continent",
+         sub = "(axis variables rearranged)",
+         cex.main = 1.4, xaxs = "i")
+axis(2, at = c(0,1), labels = c("min","max"), las = 1,
+     tick = FALSE)
+legend("right", lty = 1, legend = levels(data$CONTINENT),
+       col = colors6, cex = .9, bty = "n")
+@
+\bigskip
+The code for the second plot is identical to the first, with the exception of the beginning of the \texttt{parcoord()}\index{parcoord@{\tt parcoord()}} call:
+
+<<echo = TRUE, eval = FALSE>>=
+parcoord(data[,c("GDP","LIFEEXP","CHMORT","TFR")],
+@
+\index{parallel coordinate plots|)} \index{datasets!fertility rates|)} \index{datasets!world development|)}
+\pagebreak
+\section{Percents... or Parts of a Whole} \index{parts of a whole|(}
+\index{datasets!fathers age and education|(}
+\subsection*{\em Unidimensional data}
+\subsection{Pie charts (base)} \index{pie charts|(}
+If you design charts, you're probably aware that the pie chart is quite controversial. The documentation for the \texttt{pie()}\index{pie@{\tt pie()}} function in base graphics doesn't pull any punches: "Pie charts are a very bad way of displaying information.... A bar chart or dot chart is a preferable way of displaying this type of data." We agree. Experiments by Cleveland\index{Cleveland, William} and McGill show that we judge position and length\index{position, judging}\index{length, judging} more accurately than angles or areas.
+
+One positive feature of pie charts, however, is that they clearly show that the sum of the wedges is 100\%. To retain this feature in bar charts we created a "bar percent chart" with percent labels, which we'll discuss in the next section.
+
+Suffice it to say here that if you do use a pie chart, be sure that the data you're displaying represent parts of a whole. Otherwise the chart isn't just difficult to read, it's nonsensical. In this example, we use a pie chart to show the percentages of fathers without high school degrees who had their first child within particular age brackets. (See Appendix \ref{fathersdata} for a data table.)
+\bigskip
+<<pie, fig.width = 7, fig.height = 5, out.width='.6\\textwidth'>>=
+n <- getfigopts()
+data <- read.table ("fathers.txt")
+colors4 <- c("lightblue", "skyblue3", "rosybrown1",
+             "rosybrown3")
+pie(data[,"NOHSDEG"], labels = data$AGE, col = colors4,
+    cex = 1.5)
+mtext(paste("Fathers without High School Degrees:\n",
+              "Age at First Child"), side = 3,
+      cex = 1.7, font = 2)
+@
+
+\bigskip
+
+Documentation warnings notwithstanding, a pie chart is easily drawn in base graphics by sending a vector of values to \texttt{pie()}\index{pie@{\tt pie()}}. The values are converted to percents, if necessary, before the plot is drawn. Note that for long titles, creating a line break with \texttt{\textbackslash n} is a convenient way to divide the title without adding a second title line.\index{line breaks in plot text}
+\bigskip
+
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label = 'pie', echo = -1, eval = FALSE>>=
+@
+\index{pie charts|)}
+\bigskip
+\subsection{Bar percent charts (base)} \index{bar charts!bar percent charts|(} \index{bar percent charts|(}
+For very small data sets, we generally prefer bar charts. To make it clear that our data points are parts of a whole, we label the bars with percents to show that they total to 100\%. We created a function \texttt{barpercent()} to do this:
+\bigskip
+<<barpercent, echo = FALSE, eval = TRUE>>=
+barpercent <- function (x, names = NULL) {
+    if (is.null(names)) names <- names(x)
+    par (las = 1, mar = c(5,10,4,6), xpd = NA, xaxs = "i", yaxs= "i")
+    data <- x[order(x)]*100/sum(x)
+    labels <- paste(names[order(x)],"   ",
+                    formatC(data,digits=1,format="f",width=4))
+    xmax <- round(max(data),digits = -1)
+    ymax <- (length(x)*1.2)+.1
+    plot(NULL, xlim = c(0,xmax), ylim=c(0,ymax), axes = FALSE,
+         xlab = "percent", ylab="")
+    barplot(data, horiz = TRUE, names.arg = labels,
+            col = "lightblue", border = "lightblue",
+            axes = FALSE, add = TRUE)
+    axis (1, pos = 0, xlim = c(0,xmax), at = c(0,1:(xmax/10)*10))
+    hat <- -xmax/16.66667
+    text(hat, .2, "100.0", adj = c(1,1))
+    text(hat, .2, "%", adj = c(0,1))
+    lines(c(.3,3.2)*hat,c(.25,.25))
+}
+@
+
+<<barpercentplot, fig.width = 7, fig.height = 3.5>>=
+n <- getfigopts()
+source("barpercent.R")
+data <- read.table ("fathers.txt")
+barpercent(data$NOHSDEG,data$AGE)
+mtext(paste("Fathers without High School Degrees: \n",
+              "Age at First Child"), side = 3, line = 1,
+      font = 2, cex = 1.5)
+@
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label='barpercent', echo = -1, eval = FALSE>>=
+@
+
+We include the code here as it shows off what we love about R: you are never limited by a set number of chart types. If the chart you want isn't available, you can create it, or more often than not, find a package that has what you're looking for. The file \textsf{"barpercent.R"} is available \href{https://github.com/nbrgraphs/mro}{on Github}.\footnote{\href{https://github.com/nbrgraphs/mro}{https://github.com/nbrgraphs/mro}}
+\bigskip
+<<ref.label='barpercentcode', echo = TRUE, eval = FALSE>>=
+@
+
+\index{bar percent charts|)} \index{bar charts!bar percent charts|)}
+\subsection*{\em Multidimensional data}
+\subsection{Multiple pie charts (base)} \index{multiple pie charts|(} \index{pie charts!multiple pie charts|(}
+What if we're interested not only in the age at which fathers who didn't complete high school had their first child, but the age at which fathers entered fatherhood for a range of educational levels? A common approach is to draw a series of pie charts:
+\bigskip
+<<pie2by2, fig.width = 5.5, fig.height = 4, out.width='.7\\textwidth'>>=
+n <- getfigopts()
+data <- read.table("fathers.txt")
+colors4 <- c("lightblue", "skyblue3", "rosybrown1",
+             "rosybrown3")
+par(mfrow = c(2,2), mar=c(1,0,1,0), oma = c(0,2,3,0))
+pietitles <- c("No H.S. degree", "H.S. degree",
+               "Some college", "College degree")
+for (i in 2:5) {
+    pie(data[,i], labels = data$AGE,
+        main = pietitles[i-1], col = colors4)
+}
+mtext("Father's Age at First Child, by Education",
+      side=3, line=1, outer=TRUE, cex=1.5, font=2)
+mtext("Not recommended!", side = 2, font = 2,
+      outer = TRUE, col = "red")
+@
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label = 'pie2by2', echo = -1, eval = FALSE>>=
+@
+\bigskip
+We're able to put four graphs in one plot using \texttt{par(mfrow=c(2,2))}.\index{par@{\tt par()}} So the labels aren't cut off, we eliminate the left and right margins\index{margins}, and for overall spacing shrink the top and bottom margins of each graph to 1 with \texttt{mar=c(1,0,1,0)}. Extra space is needed to fit the title and y-axis label, so we change the left outer margin to 2 and the top outer margin to 3: \texttt{oma=c(0,2,3,0)}. (The default is 0 on all sides.) Note that with \texttt{mtext()}\index{mtext@{\tt mtext()}} we need \texttt{(outer=TRUE)} in order for the text to appear in the outer margin. Getting the spacing right with pie charts is a challenge--another incentive not to use them.
+
+In terms of the content, we find this graph particularly confusing. It is difficult to read one pie chart let alone compare one to another, particularly since certain categories, such as "25-29 yrs", appear in different places in different pies due to the variety of wedge or slice sizes. What are our alternatives?
+\bigskip
+\index{pie charts!multiple pie charts|)} \index{multiple pie charts|)}
+\subsection{Divided bar charts (base)} \label{divided} \index{bar charts!divided bar charts|(} \index{divided bar charts|(}
+<<horizdividedbarchart, fig.width = 7, fig.height = 4.5, out.width='.85\\textwidth'>>=
+n <- getfigopts()
+par(mar=c(5, 8, 4, 2))
+fathers <- read.table("fathers.txt")
+columns <- c("COLLDEG", "SOMECOLL", "HSDEG","NOHSDEG")
+data <- as.matrix(subset(fathers, select = columns))
+colors4 <- c("lightblue", "skyblue3", "rosybrown1",
+             "rosybrown3")
+edugroups <- c("No H.S. degree", "H.S. degree",
+               "Some college", "College degree")
+barplot (data, names.arg = edugroups, horiz = TRUE,
+         col = colors4, border = colors4, xlab = "percent",
+         ylim = c(0,5.5), cex.axis = 1.3, cex.names = 1.2,
+         cex.lab = 1.3, las = 1)
+legend ("top", legend=fathers$AGE, fill = colors4,
+       border = colors4, bty = "n", cex = 1.1,
+       horiz = TRUE)
+title ("Father's Age at First Child, by Education",
+       cex.main = 1.6)
+@
+\bigskip
+
+A divided bar chart is a common option for comparing parts of a whole in different groups. The coding is the same as for a stacked bar chart; what distinguishes it from a stacked bar chart is that the columns all sum to 100\%, so the bar chart is even on both sides. While we're not big fans of stacked bar charts, the divided bar chart does a fair job at showing percents. We clearly see here that the percentage of fathers who had their first child before they turned 20 decreases significantly as education increases (light blue bars on the left). Likewise the percentage who had their first child in the 30-44 yrs age range increases with education (dark pink bars on the right). The dark blue and light pink bars representing middle age ranges are more difficult to compare since they don't have a common starting point. Still with this data trends are discernible.
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label='horizdividedbarchart', echo = -1, eval = FALSE>>=
+@
+The divided bar chart is drawn in base graphics by passing a matrix of values to the \texttt{barplot()}\index{barplot@{\tt barplot()}} function. The stacks represent the columns of the matrix and the colors represent the rows. When converting to matrix form with \texttt{as.matrix()}\index{asmatrix@{\tt as.matrix()}}, we begin with the factor level\index{factor level order} we want to appear at the bottom of the chart, in this case \texttt{COLLDEG}, since horizontal bar charts are drawn in base graphics from the bottom up. Setting the border color \texttt{(border=)} to the same vector of colors as the fill color \texttt{(col=)} provides a cleaner look than does the default black border color. (You may have noticed that we kept the black borders in the histograms since the bars are adjacent.)
+
+We extend the y-axis a bit \texttt{(ylim=)} so the legend\index{legends|(} doesn't overlap with the bars. If you wish to extend the x or y coordinate ranges with \texttt{xlim} / \texttt{ylim} but don't know what the current ranges are--it's not always obvious--you can get an approximation with \texttt{par("usr")}\index{par@{\tt par()}}, which returns the x and y ranges, respectively.
+
+The legend should be as easy to read as possible, so we placed it on the top of the graph with the color boxes in the same order as the bars in the chart. If the bars were vertically stacked, we would place the legend on the right, once again with the colors ordered as they are in the graph. If this doesn't happen automatically, resort the order of the \texttt{(legend=)} vector. The default box drawn around the legend is distracting, so we remove it with \texttt{(bty="n")}.\index{legends|)}
+\bigskip
+\index{bar charts!divided bar charts|)} \index{divided bar charts|)}
+\subsection{Grouped bar charts (base)} \index{bar charts!grouped bar charts|(} \index{grouped bar charts|(}
+<<groupedbarchart, fig.width = 7, fig.height = 5, out.width='.8\\textwidth'>>=
+n <- getfigopts()
+fathers <- read.table("fathers.txt")
+columns <- c("NOHSDEG", "HSDEG", "SOMECOLL", "COLLDEG")
+data <- as.matrix(subset(fathers, select = columns))
+colors4 <- c("lightblue", "skyblue3", "rosybrown1",
+             "rosybrown3")
+edugroups <- c("No H.S. degree", "H.S. degree",
+               "Some college", "College degree")
+barplot(data, names.arg = edugroups, beside=TRUE,
+        col = colors4, border = colors4, ylab = "percent",
+        ylim = c(0,58), cex.axis = 1.3, cex.names = 1.1,
+        cex.lab = 1.3, las = 1)
+legend("top", fill = colors4, border = colors4, bty = "n",
+        legend=fathers$AGE, cex = 1.2, horiz = TRUE)
+title ("Father's Age at First Child, by Education",
+       cex.main = 1.6)
+@
+\bigskip
+
+The advantage of the grouped bar chart is that values can easily be compared both within and across educational levels since all bars begin in the same place--the x-axis. The downside is that bars of the same color are not adjacent and therefore more concentration is required to observe trends.
+
+The code for the grouped bar chart is nearly identical to that of the divided bar chart. We add \texttt{(beside=TRUE)} so bars are placed alongside each other rather than stacked, remove \texttt{(horiz=TRUE)} to draw vertical bars, and adjust labels and coordinate limits as needed.
+\bigskip
+
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label='groupedbarchart', echo = -1, eval = FALSE>>=
+@
+\bigskip
+\index{bar charts!grouped bar charts|)} \index{grouped bar charts|)}
+\subsection{Faceted bar charts (ggplot2)} \index{bar charts!faceted bar charts|(} \index{faceted bar charts|(}\index{packages!ggplot2@{\bf ggplot2}|(}
+Facets offer a powerful way to represent multidimensional data\index{multidimensional data}. To avoid the cluttering and confusion that inevitably accompanies attempts to display an entire multidimensional data set in one graph, the data is organized into multiple small plots or panels. Each contains subsets of the data conditioned on levels of one or more variables.\footnotemark{} \index{packages!lattice@{\bf lattice}} We switch to \textbf{ggplot2}\index{packages!ggplot2@{\bf ggplot2}} here since R base graphics doesn't offer a system for faceting. We present a very simple case of faceting: a plot of the fatherhood data in four panels, conditioned on education level:
+
+\footnotetext{The concept was developed and introduced to S\index{S language} by William Cleveland and colleagues as trellis displays\index{trellis displays}, and implemented in R in the \textbf{lattice} package. In \emph{The Grammar of Graphics}, on which the \textbf{gglot2} package is based, Leland Wilkinson \index{Wilkinson, Leland} defines facets more generally as "frames of frames."}
+\bigskip
+
+<<panelpercent, fig.width = 7, fig.height = 3, out.width='.9\\textwidth'>>=
+n <- getfigopts()
+library(ggplot2)
+library(tidyr)
+fathers <- read.table("fathers.txt")
+data <- gather(fathers, key = EDUCATION, value = PERCENT,
+               -AGE)
+levels(data$EDUCATION) <- c("No H.S. degree", "H.S. degree",
+                            "Some college", "College degree")
+g <- ggplot(data, aes(x = AGE, y = PERCENT))
+g + geom_bar(stat = "identity", fill = "lightblue") +
+    coord_flip(expand = FALSE) +
+    facet_grid(.~EDUCATION) + theme_bw(16) +
+    theme(axis.line = element_blank(),
+          axis.ticks.length = unit(0, "cm"),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor = element_blank(),
+          strip.background = element_rect(fill="grey90"),
+          strip.text.x =
+              element_text(margin = margin(t = 5, b= 5)),
+          plot.title = element_text(face = "bold")) +
+    ggtitle("Father's Age at First Child, by Education") +
+    xlab(NULL) + ylab("percent")
+@
+\bigskip
+We use a single color since the layout of the panels allows us to compare bars horizontally (across education levels) or vertically (within an education level) without having to focus on a particular color. While we like the overall structure, one downside is the condensed nature of the bars resulting from plotting four panels of horizontal bar charts in a single row.
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label = 'panelpercent', echo = -1, eval = FALSE>>=
+@
+It is beyond the scope of this introduction to explain the \textbf{ggplot2}\index{packages!ggplot2@{\bf ggplot2}} system from the ground up. Winston Chang's\index{Chang, Winston} \emph{R Graphics Cookbook} and package author Hadley Wickham's\index{Wickham, Hadley} \emph{ggplot2: Elegant Graphics for Data Analysis} are excellent resources for learning the package systematically. As indicated earlier, the ability to convert data into long form is key for \textbf{ggplot2}\index{packages!ggplot2@{\bf ggplot2}}. Two other packages, also by Hadley Wickham,\index{Wickham, Hadley} \textbf{tidyr}\index{packages!tidyr@\textbf{tidyr}} and \textbf{dplyr}\index{packages!dplyr@\textbf{dplyr}}, provide highly intuitive functions for getting the data in proper form before plotting. RStudio provides \href{https://www.rstudio.com/resources/cheatsheets/}{excellent cheatsheets} for all three.\footnote{\href{https://www.rstudio.com/resources/cheatsheets/}{https://www.rstudio.com/resources/cheatsheets/}}\index{RStudio cheatsheets}
+
+Regarding our code, \textbf{ggplot2}\index{packages!ggplot2@{\bf ggplot2}} users will note that the fill color is added to \texttt{geom\_bar()}\index{geombar@{\tt geom\_bar()}}, not the \texttt{ggplot()} aesthetic \texttt{aes()}, since it doesn't vary. We create a horizontal chart using \texttt{coord\_flip}\index{coordflip@{\tt coord\_flip()}}, adding \texttt{(expand=FALSE)} to eliminate a gap between the chart and the axes, similar to \texttt{(xaxs="i")} and \texttt{(yaxs="i")} in base. Since we flipped the coordinates, the axis labels are the opposite of what we expect: we use \texttt{(ylab="percent")} to label the x-axis. In general the default font sizes in \textbf{ggplot2}\index{packages!ggplot2@{\bf ggplot2}} are quite small, but they can be easily increased by passing a larger base font size to the theme, such as \texttt{theme\_bw(16)}\index{themebw@{\tt theme\_bw()}}. The base font size is the font size of the axis labels; by default the plot title is 20\% larger and the tick mark labels are 20\% smaller. Of course, these relative sizes can be changed by adjusting the theme elements individually.
+
+\index{datasets!fathers age and education|)} \index{datasets!living arrangements|(}
+The next example shows how faceting can be combined with color to show living arrangements of four groups of older male and female age groups (see Appendix \ref{livingdata} for a data table). Again the structure of the graph allows us to compare down the columns within one age group or along the rows for cross-age comparisons. In the next section we'll consider another way to present the same data.
+\bigskip
+<<living, fig.width = 7, fig.height=4, out.width='.9\\textwidth'>>=
+n <- getfigopts()
+library(ggplot2)
+data <- read.csv("living.csv")
+colors2 <- c("lightblue","skyblue3")
+data$LIVING <- factor(data$LIVING, levels =
+                           c("Other group quarters",
+                             "Nursing home",
+                             "Alone in household",
+                             "With others in household"))
+twolinelabels <- c("Other group\nquarters",
+                 "Nursing home",
+                 "Alone in\nhousehold",
+                 "With others\nin household")
+data$AGE <- factor(data$AGE, levels = c("70-79 yrs",
+                                         "80-89 yrs",
+                                         "90-99 yrs",
+                                         "100+ yrs"))
+g <- ggplot(data, aes(x = LIVING, y = PERCENT,
+                      fill = SEX))
+g + geom_bar(stat="identity", position = "dodge") +
+    scale_x_discrete(labels = twolinelabels) +
+    scale_fill_manual(values = colors2,
+                      limits = c("Male","Female")) +
+    scale_y_continuous(breaks = c(0,30,60)) +
+    coord_flip() + facet_grid(. ~ AGE) +
+    theme_bw(16) +
+    theme(axis.ticks.length = unit(0, "cm"),
+          legend.title = element_blank(),
+          legend.position = c(.9,-.2),
+          legend.key = element_blank(),
+          legend.key.size = unit(.8, "lines"),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor = element_blank(),
+          strip.background = element_rect(fill="grey90"),
+          strip.text.x=element_text
+            (margin = margin(t=5, b=5)),
+          plot.title = element_text(hjust = 0, size = 16,
+                                    face = "bold"),
+          plot.margin = margin(8,8,24,8)) +
+    xlab(NULL) + ylab("percent") +
+    ggtitle ("Living Arrangements of Older Age-Sex Groups")
+@
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label = 'living', echo = -1, eval = FALSE>>=
+@
+Since the bars will be plotted according to the factor levels\index{factor level order}, we use \texttt{factor()}\index{factor@{\tt factor()}} to set the levels to the desired order. Two line labels are added with \texttt{(labels=)} in \texttt{scale\_x\_discrete()}\index{scalexdiscrete@{\tt scale\_x\_discrete()}}. Colors are set with \texttt{(values=)} in \texttt{scale\_fill\_manual}\index{scalefillmanual@{\tt scale\_fill\_manual()}}; we use \texttt{(limits=)} in the same line to set the order of the legend entries to match the order of the bars in the chart. In \texttt{scale\_y\_continuous()}\index{scaleycontinuous@{\tt scale\_y\_continuous()}}, setting \texttt{(breaks=)} prevents the x-axis from becoming too crowded with tick mark labels. We make a number of changes to the theme, primarily removing grid lines, borders, and other unnecessary elements from the plot. The process can be expedited by creating a custom theme. We choose not to do that here to make the changes more transparent. The following chart shows additional textual elements that can be altered with \texttt{theme()}\index{theme@{\tt theme()}}:
+\bigskip
+<<themetextgg, fig.width = 7, fig.height = 5, out.width='.9\\textwidth'>>=
+library(ggplot2)
+assign("legend.title=element_text\n(family=\"Times\")",
+       factor(c("legend.text =","element_text",
+                "(family =","Courier)")))
+df <-
+    data.frame(x = c(1,2,3,4), y = c(1,2,3,4),
+               z = factor(c("strip.text.x = element_",
+                              "strip.text.x = element_",
+                              "text(color = \"blue\")",
+                              "text(color = \"blue\")")),
+               w = factor(c("strip.text.y = element_",
+                              "strip.text.y = element_",
+                              "text(color = \"red\")",
+                              "text(color = \"red\")")),
+               `legend.title=element_text\n(family="Times")`)
+colors4 <- c("lightblue","skyblue3","rosybrown1","rosybrown3")
+title <- paste0("plot.title = element_text\n",
+               "(color = \"darkgreen\",size = rel(1.5))")
+ggplot (df, aes(x,y, color = `legend.title=element_text\n(family="Times")`)) +
+    geom_point(size = 3) + facet_grid(w~z) +
+    scale_x_continuous(breaks = c(1,3),
+                       labels = rep("axis.text.x",2)) +
+    scale_y_continuous(breaks = c(1,3),
+                       labels = rep("axis.text.y",2)) +
+    scale_color_manual(values = colors4,
+                       limits = c("legend.text =",
+                                  "element_text",
+                                  "(family =",
+                                  "Courier)")) +
+    theme_bw(base_size = 14) +
+    theme(strip.text.x = element_text(color = "blue"),
+          strip.text.y = element_text(color = "red"),
+          plot.title = element_text(color = "darkgreen",
+                                    size = rel(1.5)),
+          axis.title.x = element_text(face = "italic"),
+          axis.title.y = element_text(face = "bold"),
+          legend.title=element_text(family="Times"),
+          legend.text = element_text (family = "Courier"),
+          legend.key = element_blank()) +
+    ggtitle(title) +
+    xlab("axis.title.x = element_text (face = \"italic\")") +
+    ylab("axis.title.y = element_text (face = \"bold\")")
+@
+\bigskip
+\index{packages!ggplot2@{\bf ggplot2}|)}\index{datasets!living arrangements|)}
+\index{bar charts!faceted bar charts|)} \index{faceted bar charts|)} \index{parts of a whole|)}
+\bigskip
+\pagebreak
+
+\section{Special Cases}
+\subsection{Diverging stacked bar charts (HH)} \label{diverging} \index{bar charts!diverging stacked bar charts|(} \index{diverging stacked bar charts|(} \index{packages!HH@{\bf HH}|(}
+Some categorical data, particularly attitudinal research results, are derived from scales with diverging categories. It can be a challenge to plot such data. If, for example, we use bars to represent "Strongly Agree", "Agree", "Neutral", "Disagree", and "Strongly Disagree," we are not able to show that the categories are points along a scale with extremes at both ends. Diverging stacked bar charts are a preferred option in this case since they preserve this aspect of the data. They are well suited for attitudinal "Likert" data but can be used for any categorical data with categories that fall into two opposing groups.
+
+Diverging stacked bar charts look similar to divided bar charts but rather than starting and ending in same place (see section \ref{divided}), the bars are centered on a reference line in the middle of the "neutral" category, or between the least extreme opposing categories if no neutral category exists.
+
+Here we show a diverging stacked bar chart for the results of a public attitude question about video games:\index{datasets!video game attitudes|(}
+\bigskip
+<<likert, fig.width = 7, fig.height = 5, out.width='.9\\textwidth'>>=
+n <- getfigopts()
+library(HH)
+Question <- c("Are a waste of time",
+"Help develop good\nproblem solving skills",
+"Promote teamwork and\ncommunication",
+"Are a better form of\nentertainment than TV")
+data <- data.frame("not true for\nmost games"
+                   = c(24,16,23,30),
+                   "unsure" = c(16,20,28,24),
+                   "true for some games,\nbut not others"
+                   = c(33,47,37,34),
+                   "true for\nmost games" = c(26,17,10,11),
+                   Question, check.names = FALSE)
+likert(Question ~ ., data,
+       ReferenceZero = 2,
+       positive.order = TRUE,
+       main = "Public Attitudes Toward Video Games",
+       xlab = paste("% of all adults who think the",
+                      "above qualities are..."),
+       ylab = "")
+@
+
+\bigskip
+We clearly see from the bars which questions have responses that skew toward the "true" (blue) pole and those that skew to the "not true" (red) pole. The reference line is placed behind the data so as not to make the "unsure" category look like two groups.
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label='likert', echo = -1, eval = FALSE>>=
+@
+\bigskip
+The \texttt{likert()}\index{likert@{\tt likert()}} function is found in the \textbf{HH} package. The data passed to the function contains a column of responses for each value of the scale and an optional column of statements or questions associated with each row of data. If omitted, row names of the data structure are used. Since we have an even number of categories we specify that the second category ("unsure") is the neutral one with \texttt{(ReferenceZero=2)}. The other parameter, besides the labels, is \texttt{(positive.order=TRUE)}, which orders the bars in descending order from the top, beginning with the one that protrudes furthest to the right.
+\index{datasets!video game attitudes|)}
+Here we show the living arrangements data using the \texttt{likert()}\index{likert@{\tt likert()}} function:
+\index{datasets!living arrangements|(}
+<<likertliving, fig.width = 8, fig.height = 5, out.width='.9\\textwidth'>>=
+n <- getfigopts()
+library(HH)
+library(tidyr)
+library(dplyr)
+data <- read.csv("living.csv")
+newlevels <- c("Other group quarters","Nursing home",
+               "Alone in household",
+               "With others in household")
+data$LIVING <- factor(data$LIVING, levels = newlevels)
+ldata <- spread(data, key = LIVING, value = PERCENT) %>%
+    mutate(GROUP = paste(AGE,SEX))
+likert(GROUP~., ldata, positive.order = TRUE,
+       main = "Living Arrangments of Older Age-Sex Groups",
+       xlab = "percent", ylab = "")
+@
+\bigskip
+
+The diverging stacked bar chart clearly distinguishes between institutional living ("Other group quarters" and "Nursing home") and home living ("Alone in household" and "With others in household"). With the bars ordered, we see that age is the primary factor in determining whether individuals will live at home. In addition, within each age bracket, men are more likely to live at home than women. \index{datasets!living arrangements|)}
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label="likertliving", echo = -1, eval = FALSE>>=
+@
+\bigskip
+There are many creative uses for a diverging stacked bar chart, including age pyramids and profit/loss data. For more info, see \hyperref[bib]{Heiberger and Robbins (2014)}. \footnote{\href{https://www.jstatsoft.org/article/view/v057i05}{https://www.jstatsoft.org/article/view/v057i05}}\index{Heiberger, Richard}\index{Robbins, Naomi}
+\index{diverging stacked bar charts|)} \index{bar charts!diverging stacked bar charts|)}
+\index{packages!HH@{\bf HH}|)}
+\subsection{Linked micromaps (micromapST)} \index{linked micromaps|(}
+\index{datasets!US states, median age and income|(}
+
+<<micromap, fig.width = 7.5, fig.height = 10>>=
+n <- getfigopts()
+library(micromapST)
+data <- read.csv("acs2014.csv", row.names = 1)
+data <- data[order(data$Income),]
+
+panelDesc <- data.frame(
+    type = c("map", "id", "dot", "dot"),
+    lab1 = c("", "", "Median Age", "Median Income"),
+    lab3 = c("", "", "", "in 2014 inflation-adjusted $"),
+    col1 = c(NA, NA, "Age", "Income"))
+
+micromapST(data,panelDesc, rowNames = "full", sortVar="Age",
+           ascend = FALSE,
+           title = paste("2010-2014 American Community",
+                       "Survey: State Age and Income"),
+           details = list(Title.cex = 1.4))
+@
+
+Linked micromaps are extremely useful for geographically referenced data--data for regions such as states, countries, or counties--as they help us visualize geographic patterns in the data. In a linked micromap, a variable of interest is ordered by size and then the data is split into groups of about five, depending on the size of the data set. This format works well since often information is digested better in small carefully chosen chunks than in, as Alberto Cairo puts it, "a single, large, ultra-complex, cluttered display."\footnote{\href{http://www.thefunctionalart.com/2013/07/falling-in-love-with-micromaps.html}{"Falling in Love with Micromaps"}  \href{http://www.thefunctionalart.com/2013/07/falling-in-love-with-micromaps.html}{http://www.thefunctionalart.com/2013/07/falling-in-love-with-micromaps.html}}\index{Cairo, Alberto} Color is used to link the regions indicated in the map with the region names and associated data.
+
+The linked micromap plot here was produced with the \textbf{micromapST}, a package for drawing linked micromaps for the 50 US states plus the District of Columbia. Other packages are available for other geographic regions.
+\bigskip
+<<>>=
+showfigopts(n)
+@
+
+<<ref.label="micromap", echo = -1, eval = FALSE>>=
+@
+\bigskip
+Before plotting, we created a simple data frame with two columns, one for median age and one for median income. See Appendix \ref{acsdata} for the data source. The row names must contain the state names, plus the District of Columbia. Three formats are acceptable: the full names, two letter abbreviations or two digit FIPS codes. That is the only data the user supplies: all of the geographical data needed to draw the plots is built into the \textbf{micromapST} package\index{packages!micromapST@{\bf micromapST}}.
+
+Next we create a data frame, \texttt{panelDesc}, that contains information about the structure of the plot. Each element of the \texttt{type} variable specifies the graphical type for each column of the plot. To keep it simple, we used \texttt{dot} for both of the plot columns though many other options are available: arrow charts, bar charts, stacked bar charts, box plots, dot with confidence intervals, scatterplots and time series plots\index{time series}, many of which require additional columns of data. The variables \texttt{lab1}, \texttt{lab2}, and \texttt{lab3} provide the title, subtitle, and footer for each column. The last variable \texttt{col1} specifies the data either by column name or number. For chart types that require more than one column of data, \texttt{col2} and \texttt{col3} are included. Finally we set the overall title and title font size with the \texttt{(details=)} parameter. As with many other plots we've described here, this is a basic example. Additional options can be found in the package documentation and \hyperref[bib]{Carr and Pickle (2010).}\index{Carr, Daniel}\index{Pickle, Linda}
+
+The call to \texttt{micromapST()}\index{micromapST@{\tt micromapST()}} draws the plot. In addition to passing \texttt{data} and \texttt{panelDesc} to the function, we add a few other parameters. We indicate that we are using full state names as row names \texttt{(rowNames="full")}, that the variable on which to sort \texttt{(sortVar=)} is "Age", and set \texttt{(ascend=FALSE)} so the data are presented from top to bottom in descending order, i.e. Maine, with the highest median age, appears at the top of the chart.\footnote{This behavior is different from base graphics, where dot charts are plotted from the bottom up rather than the top down.} Finally we add a title and specify the title font size with the \texttt{details} parameter.
+\index{linked micromaps|)} \index{datasets!US states, median age and income|)}
+\pagebreak
+\section{Conclusion}
+We hope we have inspired you to try some new graphs in R.
+With over 8000 packages available, and the ability to create your own graphic forms, the possibilities are endless. What will your next graph look like?
+\bigskip
+<<graphpaper, fig.width = 7, fig.height = 7>>=
+par(pin = c(5,5))
+plot(25,25, xlim = c(-15,15), ylim = c(-15,15),
+     axes = FALSE,ann = FALSE, xaxs ="i", yaxs = "i",
+     asp = 1)
+abline(v=-15:15, h= -15:15, col = "grey80")
+@
+\bigskip
+We look forward to hearing from you. Please direct comments regarding effective graph design to \href{mailto:naomi@nbr-graphs.com}{naomi@nbr-graphs.com} and R comments to\\ \href{mailto:joycerobbins1@gmail.com}{joycerobbins1@gmail.com}.
+\pagebreak
+\appendix
+\section*{Appendices}
+
+\section{Data and Sources}
+\subsection{{\sffamily countries2012.csv}} \label{countrydata}
+<<echo = TRUE>>=
+data <-read.csv("countries2012.csv")
+str(data)
+@
+(header only, numerical data rounded)\\
+<<results='asis'>>=
+library(xtable)
+data <-read.csv("countries2012.csv")
+print(xtable(head(data,4), digits = 1), size = "\\footnotesize")
+@
+\bigskip
+source: \href{http://databank.worldbank.org/}{http://databank.worldbank.org/}
+\pagebreak
+\subsection{{\sffamily fathers.txt}} \label{fathersdata}
+\bigskip
+<<echo = TRUE>>=
+data <-read.table("fathers.txt")
+str(data)
+@
+
+<<results='asis'>>=
+library(xtable)
+data <-read.table("fathers.txt")
+print(xtable(data), size = "\\small")
+@
+
+\bigskip
+Source: \href{http://www.pewresearch.org/fact-tank/2015/06/19/college-educated-men-take-their-time-becoming-dads/}{http://www.pewresearch.org/fact-tank/2015/06/19/college-educated-men-take-their-time-becoming-dads/}
+
+\subsection{{\sffamily living.csv}} \label {livingdata}
+<<echo = TRUE>>=
+data <-read.csv("living.csv")
+str(data)
+@
+Source: \href{https://www.census.gov/prod/cen2010/reports/c2010sr-03.pdf}{https://www.census.gov/prod/cen2010/reports/c2010sr-03.pdf}
+\clearpage
+\textbf{{\sffamily living.csv} (cont.)}
+<<results='asis'>>=
+library(xtable)
+data <-read.csv("living.csv")
+print(xtable(data, auto = TRUE), table.placement = "!h",
+      size = "\\small")
+@
+
+
+\clearpage
+
+\subsection{{\sffamily acs2014.csv}} \label{acsdata}
+<<echo = TRUE>>=
+data <-read.csv("acs2014.csv", row.names = 1)
+str(data)
+@
+
+(header only)
+<<results='asis'>>=
+library(xtable)
+data <-read.csv("acs2014.csv", row.names = 1)
+print(xtable(head(data), auto = TRUE), table.placement = "!h",
+      size = "\\small")
+@
+Source: 2010-2014 American Community Survey 5-Year Estimates \\
+\\
+Table: GCT0101 - "Median Age of the Total Population" \\
+\href{http://factfinder.census.gov/bkmk/table/1.0/en/ACS/14_5YR/GCT0101.US01PR}{http://factfinder.census.gov/bkmk/table/1.0/en/ACS/14\_5YR/\\GCT0101.US01PR}  \\
+
+Table: GCT1902 - "Median Family Income" \\
+\href{http://factfinder.census.gov/bkmk/table/1.0/en/ACS/14_5YR/GCT1902.US01PR}{http://factfinder.census.gov/bkmk/table/1.0/en/ACS/14\_5YR/\\GCT1902.US01PR}
+\section{Base Graphics Cheatsheet}
+{\centering \includegraphics[width=1\textwidth]{BaseGraphicsP1.pdf}
+}
+{\centering \includegraphics[width=1\textwidth]{BaseGraphicsP2.pdf}
+}
+\setcounter{secnumdepth}{0}
+\section{References} \label{bib}
+{\everypar = {\hangafter=1 \parindent 0pt \hangindent .5in}
+\noindent
+Carr, Daniel B. and Linda Williams Pickle. 2010. \emph{Visualizing Data Patterns with Micromaps.} CRC Press.
+
+Chang, Winston. 2013. \emph{R Graphics Cookbook.} O'Reilly Media.
+
+Cleveland, William S. 1994. \emph{The Elements of Graphing Data}. 2nd ed. Hobart Press.
+
+Heiberger, Richard, and Burt Holland. 2015. \emph{Statistical Analysis and Data Display: An Intermediate Course with Examples in R}, 2nd ed. Springer.
+
+Heiberger, Richard M., and Naomi B. Robbins. 2014. \href{https://www.jstatsoft.org/article/view/v057i05}{"Design of Diverging Stacked Bar Charts for Likert Scales and Other Applications."} \emph{Journal of Statistical Software}, 57 (5).
+
+Jacoby, William G. 1998. \emph{Statistical Graphics for Visualizing Multivariate Data.} Sage.
+
+Murrell, Paul. 2011. \emph{R Graphics}, 2nd ed. CRC Press.
+
+Robbins, Naomi B. 2013 [2004]. \emph{Creating More Effective Graphs.} Chart House.
+
+Tufte, Edward R. 2001. \emph{The Visual Display of Quantitative Information}, 2nd ed. Graphics Press.
+
+Wickham, Hadley. 2016. \emph{ggplot2: Elegant Graphics for Data Analysis}, 2nd ed. Springer.
+
+Wilkinson, Leland. 2005. \emph{The Grammar of Graphics}, 2nd ed. Springer.
+
+Xie, Yihui. 2015. \emph{Dynamic Documents with R and knitr}, 2nd ed. CRC Press.
+}
+
+\index{examples|see{datasets}}
+\printindex{}
+\section*{About the Authors}
+\textbf{Naomi B. Robbins} is a consultant and seminar leader who specializes in the graphical display of data. She trains employees of corporations and organizations on the effective presentation of data. She also reviews documents and presentations for clients, suggesting improvements or alternative presentations as appropriate. She is the author of \emph{Creating More Effective Graphs}, first published by John Wiley (2005) and now by Chart House (2013). In addition to her one and two day seminars on creating more effective graphs, she offers short programs including "Recognizing Misleading and Deceptive Graphs" and "How to Avoid Common Graphical Mistakes." Dr. Robbins received her Ph.D. in mathematical statistics from Columbia University, M.A. from Cornell University, and A.B. from Bryn Mawr College. Naomi is active in the American Statistical Association and is the immediate past-chair of the Statistical Graphics Section. She is the organizer for the Data Visualization New York Meetup. She had a long career at Bell Laboratories before forming the consulting practice, NBR.
+
+\textbf{Joyce Robbins} specializes in the communication of social data, with expertise in both quantitative and qualitative methods. She received her Ph.D. in sociology from Columbia University, her M.A. in sociology and anthropology from Tel Aviv University and her B.S.E. in civil engineering and operations research from Princeton University. Before joining NBR, she was Assistant Professor of Sociology at Touro College in New York City, and prior to that taught high school mathematics and computer science.
+
+\section*{Acknowledgments}
+Many thanks to David Smith of Microsoft for inviting us to write this monograph, and to Terry Christiani for coordinating the project. We are grateful for the detailed feedback we received from Karen Bryan, Keith Chamberlain, Richard Heiberger, John Rosenfelder, and David Smith. Finally, we thank Julian Glickman for assisting with research.
+
+\end{document}
+
+
+

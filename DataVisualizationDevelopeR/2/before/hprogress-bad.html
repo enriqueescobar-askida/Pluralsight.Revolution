@@ -1,0 +1,39 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script src="libraries/RGraph.common.core.js" ></script>
+    <script src="libraries/RGraph.common.key.js"></script>
+    <script src="libraries/RGraph.hprogress.js" ></script>
+    
+    <title>Comparing web browers</title>
+    
+    <meta name="description" content="A basic Horizontal Progress Bar" />
+     
+</head>
+<body>
+
+    <h1 style="text-align: center">Comparing web browsers</h1>
+    <div style="text-align: center">
+        <canvas id="cvs" width="900" height="150">[No canvas support]</canvas>
+    </div>
+    
+    <script>
+        window.onload = function ()
+        {
+            var hprogress = new RGraph.HProgress('cvs',[34.1, 20.3, 18.3, 17.8, 9.5], 100);
+            hprogress.Set('colors', ['Gradient(#ccf:blue)', 'Gradient(#fcc:#fcc:red)', 'Gradient(white:white:orange)', 'gradient(white:white:white:green)','Gradient(white:white:white:white:gray)']);
+            hprogress.Set('key', ['Chrome', 'Internet Explorer', 'Firefox', 'Safari','Other']);
+            hprogress.Set('key.colors', ['blue','red','orange','green','gray']);
+            hprogress.Set('key.position','gutter');
+            hprogress.Set('units.post', '%');
+            hprogress.Set('tickmarks.zerostart', true);
+            hprogress.Set('bevel', true);
+            hprogress.Draw();            
+        }
+    </script>
+
+
+</body>
+</html>

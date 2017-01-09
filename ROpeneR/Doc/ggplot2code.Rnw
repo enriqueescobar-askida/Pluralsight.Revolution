@@ -1,0 +1,325 @@
+\documentclass[12pt]{article}
+\usepackage{mathpazo}
+\usepackage{inconsolata}
+\usepackage{imakeidx}
+\normalfont
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.5in]{geometry}
+\usepackage{parskip}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage[svgnames]{xcolor}
+\hypersetup{
+  colorlinks   = true, % color links (instead of boxes)
+  urlcolor     = Blue, % external hyperlinks
+  linkcolor    = Maroon, % internal links
+}
+\begin{document}
+
+<<setuplabel, include=FALSE, cache=FALSE>>=
+library(knitr)
+library(xtable)
+options (width = 55, str = list(strict.width = "wrap"))
+knit_hooks$set(crop = hook_pdfcrop)
+opts_chunk$set(fig.align='center',
+               crop=TRUE, cache=FALSE, echo = FALSE,
+               message = FALSE, out.width='.75\\textwidth',
+               comment = NA, fig.path = 'ggplot2figs/')
+@
+
+\renewcommand{\contentsname}{ggplot2 code for select graphs}
+
+\tableofcontents
+\setcounter{secnumdepth}{0}
+\section{Bar plots} \label{barplotgg}
+<<barplotgg, fig.width = 7, fig.height = 5>>=
+#+ fig.width = 7, fig.height = 5
+library(ggplot2)
+central <- factor(c("Costa Rica", "El Salvador",
+                    "Nicaragua", "Panama", "Honduras",
+                    "Belize","Guatemala"))
+centraltfr <- c(1.87, 1.99, 2.34,2.48, 2.51, 2.64, 3.32)
+data <- data.frame(COUNTRY = central, TFR = centraltfr)
+g <- ggplot(data, aes(COUNTRY,TFR))
+g + geom_bar(stat="identity", width = .8,
+             fill = "lightblue") +
+    coord_flip(expand = FALSE) +
+    scale_x_discrete(limits = data$COUNTRY) +
+    scale_y_continuous(limits = c(0,4)) +
+    theme_bw(16) +
+    theme(aspect.ratio = .5,
+          axis.line = element_blank(),
+          axis.text = element_text(size = rel(1)),
+          axis.ticks = element_blank(),
+          panel.border = element_blank(),
+          panel.grid.major = element_line(colour = "grey90"),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor = element_blank(),
+          plot.title = element_text(face = "bold")) +
+    ggtitle("Central America, Total Fertility Rate 2012") +
+     ylab("average births per woman") + xlab("")
+@
+\pagebreak
+<<ref.label='barplotgg', echo = TRUE, eval = FALSE>>=
+@
+\pagebreak
+\section{Box plots}
+<<boxplotgg, fig.width = 7, fig.height = 4.5>>=
+#+ fig.width = 7, fig.height = 4.5
+library(ggplot2)
+data <- read.csv("countries2012.csv")
+g <- ggplot(data, aes(x = reorder(CONTINENT, TFR, median),
+                      y = TFR))
+g + geom_hline(yintercept = 2, color = "red") +
+    geom_boxplot(fill="lightblue") +
+    annotate("text", x = .75, y = 3.4,
+             label = "<- replacement rate", color = "red",
+             size = 5) +
+    coord_flip() +
+    scale_y_continuous(limits = c(1,8), breaks = 1:8) +
+    theme_bw(16) +
+    theme(axis.text = element_text(size = rel(1)),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor = element_blank(),
+          plot.title = element_text(face = "bold")) +
+    ggtitle ("Fertility Rate Distributions by Continent") +
+    xlab(NULL) + ylab("average births per woman")
+@
+
+<<ref.label = 'boxplotgg', echo = TRUE, eval = FALSE>>=
+@
+\pagebreak
+\section{Scatterplots}
+<<scatterplotgg, fig.width = 5, fig.height = 5, out.width='.5\\textwidth'>>=
+#+ fig.width = 5, fig.height = 5
+library(ggplot2)
+data <- read.csv("countries2012.csv")
+g <- ggplot(data, aes(x = GDP/1000, y = TFR))
+g + geom_point(shape = 1, color = "cornflowerblue") +
+    theme_classic(16) +
+    theme(plot.title = element_text(face = "bold")) +
+    ggtitle("Total Fertility Rate vs. GDP, 2012") +
+    xlab("GDP per capita (in 1000s $US)") +
+    ylab("average births per woman")
+
+@
+\bigskip
+<<ref.label = 'scatterplotgg', echo = TRUE, eval = FALSE>>=
+@
+\pagebreak
+\subsection*{Scatterplot with one label}
+<<scatterplotlabgg, fig.width = 5, fig.height = 5, out.width='.5\\textwidth'>>=
+#+ fig.width = 5, fig.height = 5
+library(ggplot2)
+data <- read.csv("countries2012.csv")
+usdata <- data[data$COUNTRY == "United States",]
+g <- ggplot(data, aes(x = GDP/1000, y = TFR))
+g + geom_point(shape = 1, color = "cornflowerblue") +
+    theme_classic(16) +
+    theme(plot.title = element_text(face = "bold")) +
+    ggtitle("Total Fertility Rate vs. GDP, 2012") +
+    xlab("GDP per capita (in 1000s $US)") +
+    ylab("average births per woman") +
+    geom_point(data = usdata, aes(x = GDP/1000, y = TFR),
+               color = "magenta4") +
+    geom_text(data = usdata, aes (x = GDP/1000, y = TFR,
+                                  label = COUNTRY),
+              color = "magenta4", nudge_x = 6, nudge_y = .25)
+@
+\bigskip
+<<ref.label = 'scatterplotlabelgg', echo =TRUE, eval = FALSE>>=
+@
+
+\section{Color scatterplots}
+<<colorscatterplotgg, fig.width = 7, fig.height = 5>>=
+#+ fig.width = 7, fig.height = 5
+library(ggplot2)
+data <- read.csv ("countries2012.csv")
+colors6 <- c("orange","cyan","blue","green",
+              "black", "red")
+g <- ggplot(data, aes(GDP/1000, TFR, color = CONTINENT))
+g + geom_point(shape = 1, size =3) +
+    scale_color_manual(values = colors6) +
+    theme_classic(16) +
+    theme(plot.title = element_text(face = "bold"),
+          legend.title = element_blank()) +
+    ggtitle("Total Fertility Rate vs. GDP, 2012") +
+    xlab ("GDP per capita (in 1000s $US)") +
+    ylab ("average births per woman")
+@
+\bigskip
+<<ref.label='colorscatterplotgg', echo = TRUE, eval = FALSE>>=
+@
+\pagebreak
+\section{Parallel coordinate plots}
+\bigskip
+<<parallelgg, fig.width = 7, fig.height = 5>>=
+#+ fig.width = 7, fig.height = 5
+library(ggplot2)
+library(tidyr)
+rescale <- function(x) {(x-min(x))/(max(x)-min(x))}
+data <- read.csv ("countries2012.csv")
+data[,3:6] <- lapply(data[,3:6], rescale)
+x <- gather(data, key, value, -COUNTRY, -CONTINENT)
+colors6 <- c("orange","cyan","blue","green",
+              "black", "red")
+g <- ggplot(x, aes(x = key, y = value, group = COUNTRY,
+              color = CONTINENT))
+g + geom_line() + coord_cartesian(expand = FALSE) +
+    scale_y_continuous(breaks = 0:1,
+                       labels = c("min","max")) +
+    scale_color_manual(values = colors6) +
+    theme_classic(16) +
+    theme (axis.line = element_blank(),
+           legend.title = element_blank(),
+           plot.title = element_text(face = "bold")) +
+    ggtitle("World Development Indicators\nby Continent") +
+    xlab(NULL) + ylab(NULL)
+@
+\bigskip
+<<ref.label = 'parallelgg', echo = TRUE, eval = FALSE>>=
+@
+
+\subsection*{Three continents only}
+\bigskip
+<<parallelgg2, fig.width = 7, fig.height = 5>>=
+#+ fig.width = 7, fig.height = 5
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+rescale <- function(x) {(x-min(x))/(max(x)-min(x))}
+data <- read.csv ("countries2012.csv")
+data[,3:6] <- lapply(data[,3:6], rescale)
+x <- gather(data, key, value, -COUNTRY, -CONTINENT)
+colors6 <- c("orange","cyan","blue","green",
+              "black", "red")
+colors3 <- colors6[1:3]
+x <- x %>% filter(CONTINENT %in% c("Africa","Asia",
+                                   "Europe"))
+g <- ggplot(x, aes(x = key, y = value, group = COUNTRY,
+              color = CONTINENT))
+g + geom_line() +coord_cartesian(expand = FALSE) +
+    scale_y_continuous(breaks = 0:1,
+                       labels = c("min","max")) +
+    scale_color_manual(values = colors3) +
+    theme_classic(16) +
+    theme (axis.line = element_blank(),
+           legend.title = element_blank(),
+           plot.title = element_text(face = "bold")) +
+    ggtitle("World Development Indicators, by Continent") +
+    xlab(NULL) + ylab(NULL)
+@
+\bigskip
+<<ref.label = 'parallelgg2', echo = TRUE, eval = FALSE>>=
+@
+
+\section{Grouped bar charts}
+<<groupedbarchartgg, fig.width = 7, fig.height = 5>>=
+#+ fig.width = 7, fig.height = 5
+library(tidyr)
+library(ggplot2)
+fathers <- read.table("fathers.txt")
+data <- gather(fathers ,key = EDUCATION, value = PERCENT,
+               -AGE)
+colors4 <- c("lightblue", "skyblue3", "rosybrown1",
+             "rosybrown3")
+g <- ggplot(data, aes(x = EDUCATION, y = PERCENT,
+                      fill = AGE))
+g + geom_bar(stat = "identity", position = "dodge") +
+    scale_fill_manual(values = colors4) + theme_classic(16) +
+    theme(axis.line = element_blank(),
+          axis.ticks.length = unit (0,"cm"),
+          panel.grid.major = element_line(colour = "grey90"),
+          panel.grid.major.x = element_blank(),
+          legend.position="top",
+          legend.title = element_blank(),
+          plot.title = element_text(face = "bold")) +
+    ggtitle ("Father's Age at First Child, by Education") +
+    xlab(NULL) + ylab("percent")
+@
+\bigskip
+<<ref.label='groupedbarchartgg', echo = TRUE, eval = FALSE>>=
+@
+
+\section{Divided bar charts}
+\bigskip
+<<horizdividedbargg, fig.width = 7, fig.height = 4>>=
+#+ fig.width = 7, fig.height = 4
+library(ggplot2)
+library(tidyr)
+fathers <- read.table("fathers.txt")
+data <- gather(fathers, key = EDUCATION, value = PERCENT,
+               -AGE)
+colors4 <- c("lightblue", "skyblue3", "rosybrown1",
+             "rosybrown3")
+g <- ggplot(data, aes(x = EDUCATION, y = PERCENT,
+                      fill = AGE))
+g + geom_bar(stat = "identity") +
+    coord_flip(expand = FALSE) +
+    scale_fill_manual(values = colors4) + theme_bw(16) +
+    theme(panel.grid.major = element_blank(),
+          panel.border = element_blank(),
+          legend.position="top",
+          legend.title = element_blank(),
+          legend.key = element_blank(),
+          axis.ticks.length = unit(0, "cm"),
+          plot.title = element_text(face = "bold")) +
+    ggtitle("Father's Age at First Child, by Education") +
+    xlab(NULL) + ylab("percent")
+@
+\bigskip
+<<ref.label = 'horizdividedbargg', echo = TRUE, eval = FALSE>>=
+@
+
+\section{Controlling text elements with \texttt{theme()} in ggplot2} \label{theme}
+Font family, face, size, and color of text can be set with: \\{\tt theme( ... = element\_text (...) )}. See previous examples.
+\bigskip
+<<ggplottext, fig.width = 7, fig.height = 5, out.width='.9\\textwidth'>>=
+#+ fig.width = 7, fig.height = 5
+library(ggplot2)
+assign("legend.title=element_text\n(family=\"Times\")",
+       factor(c("legend.text =","element_text",
+                "(family =","Courier)")))
+df <-
+    data.frame(x = c(1,2,3,4), y = c(1,2,3,4),
+               z = factor(c("strip.text.x = element_",
+                              "strip.text.x = element_",
+                              "text(color = \"blue\")",
+                              "text(color = \"blue\")")),
+               w = factor(c("strip.text.y = element_",
+                              "strip.text.y = element_",
+                              "text(color = \"red\")",
+                              "text(color = \"red\")")),
+               `legend.title=element_text\n(family="Times")`)
+colors4 <- c("lightblue","skyblue3","rosybrown1","rosybrown3")
+title <- paste0("plot.title = element_text\n",
+               "(color = \"darkgreen\",size = rel(1.5))")
+ggplot (df, aes(x,y, color = `legend.title=element_text\n(family="Times")`)) +
+    geom_point(size = 3) + facet_grid(w~z) +
+    scale_x_continuous(breaks = c(1,3),
+                       labels = rep("axis.text.x",2)) +
+    scale_y_continuous(breaks = c(1,3),
+                       labels = rep("axis.text.y",2)) +
+    scale_color_manual(values = colors4,
+                       limits = c("legend.text =",
+                                  "element_text",
+                                  "(family =",
+                                  "Courier)")) +
+    theme_bw(base_size = 14) +
+    theme(strip.text.x = element_text(color = "blue"),
+          strip.text.y = element_text(color = "red"),
+          plot.title = element_text(color = "darkgreen",
+                                    size = rel(1.5)),
+          axis.title.x = element_text(face = "italic"),
+          axis.title.y = element_text(face = "bold"),
+          legend.title=element_text(family="Times"),
+          legend.text = element_text (family = "Courier"),
+          legend.key = element_blank()) +
+    ggtitle(title) +
+    xlab("axis.title.x = element_text (face = \"italic\")") +
+    ylab("axis.title.y = element_text (face = \"bold\")")
+@
+
+\end{document}
+
+
