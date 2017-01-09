@@ -47,15 +47,41 @@ RBloggers: http://www.r-bloggers.com
 
 http://statistics-with-r.teachable.com/courses/statistics-with-r/lectures/1141870
 
+http://www.endmemo.com/program/R/ztest.php
+
+http://www.listendata.com/2015/09/linear-regression-with-r.html
+
+https://www.ling.upenn.edu/~joseff/rstudy/summer2010_ggplot2_intro.html
+
+http://seananderson.ca/ggplot2-FISH554/
+
+http://abeautifulwww.com/
+
 https://gigadom.wordpress.com/2015/01/16/a-crime-map-of-india-in-r-crime-against-women/
 
 https://tadaa-data.de/2016/rstats/tadaatoolbox-got-your-back/
 
 http://stephenturner.us/edu.html
 
+http://r4ds.had.co.nz/index.html
+
+http://r-pkgs.had.co.nz/
+
+http://adv-r.had.co.nz/
+
+http://adv-r.had.co.nz/OO-essentials.html#rc
+
+http://tdhock.github.io/
+
 https://msdn.microsoft.com/en-us/microsoft-r/scaler-getting-started
 
+http://philferriere.blogspot.ca/2016/05/using-microsoft-cognitive-services-web.html
+
 https://gallery.cortanaintelligence.com/Notebook/Predictive-Maintenance-Modelling-Guide-R-Notebook-1
+
+https://www.microsoft.com/en-us/sql-server/developer-get-started/r
+
+
 
 ### Joining Data in R with dplyr
 
