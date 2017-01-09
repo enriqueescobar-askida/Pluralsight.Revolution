@@ -45,6 +45,18 @@ RBloggers: http://www.r-bloggers.com
 
 ## TO DO
 
+http://statistics-with-r.teachable.com/courses/statistics-with-r/lectures/1141870
+
+https://gigadom.wordpress.com/2015/01/16/a-crime-map-of-india-in-r-crime-against-women/
+
+https://tadaa-data.de/2016/rstats/tadaatoolbox-got-your-back/
+
+http://stephenturner.us/edu.html
+
+https://msdn.microsoft.com/en-us/microsoft-r/scaler-getting-started
+
+https://gallery.cortanaintelligence.com/Notebook/Predictive-Maintenance-Modelling-Guide-R-Notebook-1
+
 ### Joining Data in R with dplyr
 
 Learn how to combine data sets with dplyr's two table verbs. You'll learn the best ways to combine data sets using mutating joins, filtering joins, and set operations. Play now! 
