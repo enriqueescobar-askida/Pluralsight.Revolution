@@ -42,3 +42,19 @@ The BIOCONDUCTOR PROJECT FOR GENOMICS: http://www.bioconductor.org/
 
 Revolutions blog: http://blog.revolutionanalytics.com/
 RBloggers: http://www.r-bloggers.com
+
+## TO DO
+
+### Joining Data in R with dplyr
+
+Learn how to combine data sets with dplyr's two table verbs. You'll learn the best ways to combine data sets using mutating joins, filtering joins, and set operations. Play now! 
+https://www.datacamp.com/courses/joining-data-in-r-with-dplyr
+
+### Manipulating Time Series Data in R: Case Studies
+
+This follow-up course on Manipulating Time Series Data in R will strengthen your knowledge with new exercises and interesting datasets. Start now! https://www.datacamp.com/courses/manipulating-time-series-data-in-r-case-studies
+
+### Community Course: Plotly and R
+
+This Plotly tutorial will show you how you can use plotly to easily create stunning data visualizations with R. Play now for free! https://www.datacamp.com/community/open-courses/plotly-tutorial-plotly-and-r
+
