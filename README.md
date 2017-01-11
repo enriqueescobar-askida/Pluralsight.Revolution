@@ -53,6 +53,8 @@ http://www.listendata.com/2015/09/linear-regression-with-r.html
 
 https://www.ling.upenn.edu/~joseff/rstudy/summer2010_ggplot2_intro.html
 
+http://t-redactyl.io/blog/2016/03/creating-plots-in-r-using-ggplot2-part-9-function-plots.html
+
 http://seananderson.ca/ggplot2-FISH554/
 
 http://abeautifulwww.com/
