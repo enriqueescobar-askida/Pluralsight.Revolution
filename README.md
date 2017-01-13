@@ -81,11 +81,13 @@ https://msdn.microsoft.com/en-us/microsoft-r/scaler-getting-started
 
 http://philferriere.blogspot.ca/2016/05/using-microsoft-cognitive-services-web.html
 
+https://channel9.msdn.com/Events/useR-international-R-User-conference/useR2016/Towards-a-grammar-of-interactive-graphics
+
+https://channel9.msdn.com/Series/Microsoft-R-Server-Series/Introduction-to-Microsoft-R-Server-Session-2--Data-Ingestion?ocid=player
+
 https://gallery.cortanaintelligence.com/Notebook/Predictive-Maintenance-Modelling-Guide-R-Notebook-1
 
 https://www.microsoft.com/en-us/sql-server/developer-get-started/r
-
-
 
 ### Joining Data in R with dplyr
 
