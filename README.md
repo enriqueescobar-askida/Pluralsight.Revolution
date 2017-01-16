@@ -89,6 +89,10 @@ https://gallery.cortanaintelligence.com/Notebook/Predictive-Maintenance-Modellin
 
 https://www.microsoft.com/en-us/sql-server/developer-get-started/r
 
+### To Discover
+
+https://www.analyticsvidhya.com/blog/2016/03/tutorial-powerful-packages-imputing-missing-values/?utm_content=buffer31034&utm_medium=social&utm_source=linkedin.com&utm_campaign=buffer
+
 ### Joining Data in R with dplyr
 
 Learn how to combine data sets with dplyr's two table verbs. You'll learn the best ways to combine data sets using mutating joins, filtering joins, and set operations. Play now! 
