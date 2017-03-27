@@ -91,6 +91,10 @@ https://gallery.cortanaintelligence.com/Notebook/Predictive-Maintenance-Modellin
 
 https://www.microsoft.com/en-us/sql-server/developer-get-started/r
 
+### ToPackage
+
+https://www.analyticsvidhya.com/blog/2017/03/create-packages-r-cran-github/
+
 ### To Discover
 
 https://www.analyticsvidhya.com/blog/2016/03/tutorial-powerful-packages-imputing-missing-values/?utm_content=buffer31034&utm_medium=social&utm_source=linkedin.com&utm_campaign=buffer
