@@ -37,6 +37,17 @@ Project("{DA7A21FA-8162-4350-AD77-A8D1B671F3ED}") = "OlympicsAthletes", "Olympic
 EndProject
 Project("{DA7A21FA-8162-4350-AD77-A8D1B671F3ED}") = "BigDataU.R101", "BigDataU.R101\BigDataU.R101.rxproj", "{3B47AC66-6931-4F31-9101-96119EDDC95E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Zip", "Zip", "{36D9D881-2ED6-45B4-8287-4476273F14E3}"
+	ProjectSection(SolutionItems) = preProject
+		Pluralsight_microsoft-data-platform-get-started-with-r.zip = Pluralsight_microsoft-data-platform-get-started-with-r.zip
+		Pluralsight_r-data-science.zip = Pluralsight_r-data-science.zip
+		Pluralsight_r-data-visualization-beginner.zip = Pluralsight_r-data-visualization-beginner.zip
+		Pluralsight_r-mastering-data-visualization.zip = Pluralsight_r-mastering-data-visualization.zip
+		Pluralsight_r-programming-fundamentals.zip = Pluralsight_r-programming-fundamentals.zip
+	EndProjectSection
+EndProject
+Project("{DA7A21FA-8162-4350-AD77-A8D1B671F3ED}") = "Common", "Common\Common.rxproj", "{6CC74304-D776-4ABC-B1E2-D88E81ACED79}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -111,6 +122,10 @@ Global
 		{3B47AC66-6931-4F31-9101-96119EDDC95E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B47AC66-6931-4F31-9101-96119EDDC95E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B47AC66-6931-4F31-9101-96119EDDC95E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CC74304-D776-4ABC-B1E2-D88E81ACED79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CC74304-D776-4ABC-B1E2-D88E81ACED79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CC74304-D776-4ABC-B1E2-D88E81ACED79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CC74304-D776-4ABC-B1E2-D88E81ACED79}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
