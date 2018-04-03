@@ -153,4 +153,201 @@ stocks <- cbind(apple, micr, ibm)
 
 # cor() of all three
 cor(stocks)
+## Third row, second column
+cash[3,2]
 
+# Fifth row of the "year" column
+cash[5,]$year
+## Select the year column
+cash$year
+
+# Select the cash_flow column and multiply by 2
+cash$cash_flow*2
+
+# Delete the company column
+cash$company <- NULL
+
+# Print cash again
+ cash
+## Rows about company B
+subset(cash, company=="B")
+
+# Rows with cash flows due in 1 year
+subset(cash, year==1)
+#
+# Quarter cash flow scenario
+cash$quarter_cash <- cash$cash_flow*0.25
+
+# Double year scenario
+cash$double_year <- cash$year*2
+## Present value of $4000, in 3 years, at 5%
+present_value_4k <- 4000 * (1.05) ^ -3
+
+# Present value of all cash flows
+cash$present_value <- cash$cash_flow * (1.05) ^ -cash$year
+
+# Print out cash
+cash
+## Total present value of cash
+total_pv <- sum(cash$present_value)
+
+# Company B information
+cash_B <- subset(cash, company == "B")
+
+# Total present value of cash_B
+total_pv_B <- sum(cash_B$present_value)
+## credit_rating character vector
+credit_rating <- c("BB", "AAA", "AA", "CCC", "AA", "AAA", "B", "BB")
+
+# Create a factor from credit_rating
+credit_factor <- factor(credit_rating)
+
+# Print out your new factor
+credit_factor
+
+# Call str() on credit_rating
+str(credit_rating)
+
+# Call str() on credit_factor
+str(credit_factor)
+## Identify unique levels
+levels(credit_factor)
+
+# Rename the levels of credit_factor
+levels(credit_factor) <- c("2A", "3A", "1B", "2B", "3C")
+
+# Print credit_factor
+credit_factor
+## Summarize the character vector, credit_rating
+summary(credit_rating)
+
+# Summarize the factor, credit_factor
+summary(credit_factor)
+
+#
+# Create 4 buckets for AAA_rank using cut()
+AAA_factor <- cut(x = AAA_rank, breaks = c(0, 25, 50, 75, 100))
+
+# Rename the levels 
+levels(AAA_factor) <- c("low", "medium", "high", "very_high")
+
+# Print AAA_factor
+AAA_factor
+
+# Plot AAA_factor
+plot(AAA_factor)
+
+## Use unique() to find unique words
+unique(credit_rating)
+
+# Create an ordered factor
+credit_factor_ordered <- factor(credit_rating, ordered = TRUE, levels = c("AAA", "AA", "BB", "B", "CCC"))
+
+# Plot credit_factor_ordered
+plot(credit_factor_ordered)
+## Remove the A bonds at positions 3 and 7. Don't drop the A level.
+keep_level <- credit_factor[-c(3,7)]
+
+# Plot keep_level
+plot(keep_level)
+
+# Remove the A bonds at positions 3 and 7. Drop the A level.
+drop_level <- credit_factor[-c(3,7), drop = TRUE]
+
+# Plot drop_level
+plot(drop_level)
+## Variables
+credit_rating <- c("AAA", "A", "BB")
+bond_owners <- c("Dan", "Tom", "Joe")
+
+# Create the data frame of character vectors, bonds
+bonds <- data.frame(credit_rating, bond_owners, stringsAsFactors = FALSE)
+
+# Use str() on bonds
+str(bonds)
+
+# Create a factor column in bonds called credit_factor from credit_rating
+bonds$credit_factor <- factor(bonds$credit_rating, ordered = TRUE, levels = c("AAA","A","BB"))
+
+# Use str() on bonds again
+str(bonds)
+## List components
+name <- "Apple and IBM"
+apple <- c(109.49, 109.90, 109.11, 109.95, 111.03)
+ibm <- c(159.82, 160.02, 159.84, 160.35, 164.79)
+cor_matrix <- cor(cbind(apple, ibm))
+
+# Create a list
+portfolio <- list(name, apple, ibm, cor_matrix)
+
+# View your first list
+portfolio
+## Add names to your portfolio
+names(portfolio) <- c("portfolio_name", "apple", "ibm", "correlation")
+
+# Print the named portfolio
+portfolio
+## Second and third elements of portfolio
+portfolio[c(2,3)]
+
+# Use $ to get the correlation data
+portfolio$correlation
+## Add weight: 20% Apple, 80% IBM
+portfolio$weight <- c(apple = .2, ibm = .8)
+
+# Print portfolio
+portfolio
+
+# Change the weight variable: 30% Apple, 70% IBM
+portfolio$weight <- c(apple = .3, ibm = .7)
+
+# Print portfolio to see the changes
+portfolio
+## Take a look at portfolio
+portfolio
+
+# Remove the microsoft stock prices from your portfolio
+portfolio$microsoft <- NULL
+## Define grouping from year
+grouping <- cash$year
+
+# Split cash on your new grouping
+split_cash <- split(cash, grouping)
+
+# Look at your split_cash list
+split_cash
+
+# Unsplit split_cash to get the original data back.
+original_cash <- unsplit(split_cash, grouping)
+
+# Print original_cash
+original_cash
+## Print split_cash
+split_cash
+
+# Print the cash_flow column of B in split_cash
+split_cash$B$cash_flow
+
+# Set the cash_flow column of company A in split_cash to 0
+split_cash$A$cash_flow <- 0
+
+# Use the grouping to unsplit split_cash
+cash_no_A <- unsplit(split_cash, grouping)
+
+# Print cash_no_A
+cash_no_A
+## my_matrix and my_factor
+my_matrix <- matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3)
+rownames(my_matrix) <- c("Row1", "Row2")
+colnames(my_matrix) <- c("Col1", "Col2", "Col3")
+
+my_factor <- factor(c("A", "A", "B"), ordered = T, levels = c("A", "B"))
+
+# attributes of my_matrix
+attributes(my_matrix)
+
+# Just the dim attribute of my_matrix
+attr(my_matrix, which = "dim")
+
+# attributes of my_factor
+attributes(my_factor)
