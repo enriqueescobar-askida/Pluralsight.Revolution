@@ -209,4 +209,139 @@ class(stocks$apple_date) <- "Date"
 
 # Print stocks again
 stocks
+## cbind() the stocks
+stocks <- cbind(apple, ibm, micr)
 
+# cor() to create the correlation matrix
+cor(stocks)
+
+# All at once! Nest cbind() inside of cor()
+cor(cbind(apple, ibm, micr))
+## Percent to decimal function
+percent_to_decimal <- function(percent, digits = 2) {
+    decimal <- percent / 100
+    
+    round(decimal, digits)
+}
+
+# percents
+percents <- c(25.88, 9.045, 6.23)
+
+# percent_to_decimal() with default digits
+percent_to_decimal(percents)
+
+# percent_to_decimal() with digits = 4
+percent_to_decimal(percents, digits = 4)
+#
+# Present value function
+pv <- function(cash_flow, i, year) {
+    
+    # Discount multiplier
+    mult <- 1 + percent_to_decimal(i)
+    
+    # Present value calculation
+    cash_flow * mult ^ -year
+}
+
+# Calculate a present value
+pv(1200, 7, 3)
+#
+# Library tidquant
+library(tidyquant)
+
+# Pull Apple stock data
+apple <- tq_get("AAPL", get = "stock.prices", 
+                from = "2007-01-03", to = "2017-06-05")
+
+# Take a look at what it returned
+head(apple)
+
+# Plot the stock price over time
+plot(apple$date, apple$adjusted, type = "l")
+
+# Calculate daily stock returns for the adjusted price
+apple <- tq_mutate(data = apple,
+                   ohlc_fun = Ad,
+                   mutate_fun = dailyReturn)
+
+# Sort the returns from least to greatest
+sorted_returns <- sort(apple$daily.returns)
+
+# Plot them
+plot(sorted_returns)
+## Print stock_return
+stock_return
+
+# lapply to change percents to decimal
+lapply(stock_return, FUN = percent_to_decimal)
+#
+# Print stock_return
+stock_return
+
+# lapply to get the average returns
+lapply(stock_return, FUN = mean)
+
+# Sharpe ratio
+sharpe <- function(returns) {
+    (mean(returns) - .0003) / sd(returns)
+}
+
+# lapply to get the sharpe ratio
+lapply(stock_return, FUN = sharpe)
+#
+# sharpe
+sharpe <- function(returns, rf = .0003) {
+    (mean(returns) - rf) / sd(returns)
+}
+
+# First lapply()
+lapply(stock_return, FUN = sharpe, rf = .0004)
+
+# Second lapply()
+lapply(stock_return, FUN = sharpe, rf = .0009)
+## lapply() on stock_return
+lapply(stock_return, FUN = sharpe)
+
+# sapply() on stock_return
+sapply(stock_return, FUN = sharpe)
+
+# sapply() on stock_return with optional arguments
+sapply(stock_return, FUN = sharpe, simplify = FALSE, USE.NAMES = FALSE)
+## Market crash with as.Date()
+market_crash <- list(dow_jones_drop = 777.68, 
+                     date = as.Date("2008-09-28"))
+                     
+# Find the classes with sapply()
+sapply(market_crash, class)
+
+# Market crash with as.POSIXct()
+market_crash2 <- list(dow_jones_drop = 777.68, 
+                      date = as.POSIXct("2008-09-28"))
+
+# Find the classes with lapply()
+lapply(market_crash2, class)
+
+# Find the classes with sapply()
+sapply(market_crash2, class)
+## Market crash with as.POSIXct()
+market_crash2 <- list(dow_jones_drop = 777.68, 
+                      date = as.POSIXct("2008-09-28"))
+
+# Find the classes with sapply()
+sapply(market_crash2, class)
+
+# Find the classes with vapply() error expected
+vapply(market_crash2, class, FUN.VALUE = character(1))
+## Sharpe ratio for all stocks
+vapply(stock_return, sharpe, FUN.VALUE = numeric(1))
+
+# Summarize Apple
+summary(stock_return$apple)
+
+# Summarize all stocks
+vapply(stock_return, summary, FUN.VALUE = numeric(6))
+## Max and min
+vapply(stock_return, 
+       FUN = function(x) { c(max(x), min(x)) }, 
+       FUN.VALUE = numeric(2))
+       
